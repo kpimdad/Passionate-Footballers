@@ -166,8 +166,8 @@ function getAvatarHTML(user, size = 36) {
 
 // ── Scoring ────────────────────────────────────────────
 function calculatePoints(pA, pB, rA, rB) {
-  if (pA === rA && pB === rB) return 10;
-  if (Math.sign(pA - pB) === Math.sign(rA - rB)) return 5;
+  if (pA === rA && pB === rB) return 20;          // exact scoreline
+  if (Math.sign(pA - pB) === Math.sign(rA - rB)) return 10; // correct result/winner
   return 0;
 }
 
@@ -197,7 +197,9 @@ async function fetchMyPredictions() {
 async function fetchUsers() {
   const snap = await getDocs(collection(STATE.db, 'users'));
   STATE.users = [];
-  snap.forEach(d => { if (!d.data().disabled) STATE.users.push({ id: d.id, ...d.data() }); });
+  snap.forEach(d => {
+    if (!d.data().disabled && !d.data().isAdminAccount) STATE.users.push({ id: d.id, ...d.data() });
+  });
   STATE.users.sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
 }
 
@@ -210,6 +212,7 @@ async function initLoginView() {
   sel.innerHTML = '<option value="">— Who are you? —</option>';
   snap.forEach(d => {
     if (d.data().disabled) return;
+    if (d.data().isAdminAccount) return;  // admin account hidden from player list
     const o = document.createElement('option');
     o.value = d.id; o.textContent = d.data().nickname;
     sel.appendChild(o);
@@ -238,6 +241,37 @@ async function handleLogin() {
     document.getElementById('login-pin').focus();
   }
   btn.disabled = false; btn.textContent = 'Enter';
+}
+
+// ── Admin password login (hidden modal) ───────────────
+let _adminTapCount = 0, _adminTapTimer = null;
+function onTrophyTap() {
+  _adminTapCount++;
+  clearTimeout(_adminTapTimer);
+  _adminTapTimer = setTimeout(() => { _adminTapCount = 0; }, 2000);
+  if (_adminTapCount >= 5) {
+    _adminTapCount = 0;
+    document.getElementById('admin-login-modal').style.display = 'flex';
+    document.getElementById('admin-password-input').focus();
+  }
+}
+
+async function handleAdminLogin() {
+  const pw  = document.getElementById('admin-password-input').value;
+  const err = document.getElementById('admin-login-error');
+  err.style.display = 'none';
+  if (!pw) return;
+  try {
+    const snap = await getDocs(collection(STATE.db, 'users'));
+    let adminDoc = null;
+    snap.forEach(d => { if (d.data().isAdminAccount) adminDoc = { id: d.id, ...d.data() }; });
+    if (!adminDoc) { err.textContent = 'No admin account found.'; err.style.display = 'block'; return; }
+    if (await hashPin(pw) !== adminDoc.pinHash) { err.textContent = 'Wrong password.'; err.style.display = 'block'; return; }
+    document.getElementById('admin-login-modal').style.display = 'none';
+    document.getElementById('admin-password-input').value = '';
+    saveSession(adminDoc.id, adminDoc.nickname, true);
+    await initApp();
+  } catch (e) { err.textContent = 'Error: ' + e.message; err.style.display = 'block'; }
 }
 
 async function handleRegister() {
@@ -408,8 +442,8 @@ function renderMatchCard(m) {
   if (completed) {
     const pts = pred?.pointsAwarded;
     const ptsBadge =
-      pts === 10 ? `<span class="fm-pts exact">+10 pts ⚽</span>` :
-      pts === 5  ? `<span class="fm-pts winner">+5 pts ✓</span>`  :
+      pts === 20 ? `<span class="fm-pts exact">+20 pts ⚽</span>` :
+      pts === 10 ? `<span class="fm-pts winner">+10 pts ✓</span>` :
       pts === 0  ? `<span class="fm-pts wrong">0 pts</span>`      :
       !pred      ? `<span class="fm-pts none">No pick</span>`     : '';
     pickStrip = `<div class="fm-pick-strip">
@@ -631,8 +665,8 @@ async function buildFilteredLeaderboard(matchIds, filter) {
     const p = d.data();
     if (!matchIds.has(p.matchId)) return;
     pts[p.userId]    = (pts[p.userId]    || 0) + (p.pointsAwarded || 0);
-    if (p.pointsAwarded === 10) exact[p.userId]  = (exact[p.userId]  || 0) + 1;
-    if (p.pointsAwarded === 5)  winner[p.userId] = (winner[p.userId] || 0) + 1;
+    if (p.pointsAwarded === 20) exact[p.userId]  = (exact[p.userId]  || 0) + 1;
+    if (p.pointsAwarded === 10) winner[p.userId] = (winner[p.userId] || 0) + 1;
   });
   const sorted = STATE.users.map(u => ({
     ...u, filteredPoints: pts[u.id] || 0,
@@ -709,8 +743,8 @@ function renderMyPredictions() {
     if (!p) return;
     if (!groups[m.matchDay]) groups[m.matchDay] = [];
     groups[m.matchDay].push({ m, p });
-    if (p.pointsAwarded === 10) { totalPts += 10; exact++; }
-    else if (p.pointsAwarded === 5) { totalPts += 5; winner++; }
+    if (p.pointsAwarded === 20) { totalPts += 20; exact++; }
+    else if (p.pointsAwarded === 10) { totalPts += 10; winner++; }
   });
 
   const scored = Object.values(STATE.predictions).filter(p => p.pointsAwarded != null);
@@ -731,8 +765,8 @@ function renderMyPredictions() {
       <div class="matchday-label">${day}</div>
       ${items.map(({ m, p }) => {
         const pts = p.pointsAwarded;
-        const ptsCls = pts === 10 ? 'exact' : pts === 5 ? 'winner' : pts === 0 ? 'wrong' : 'none';
-        const ptsLabel = pts === 10 ? '+10' : pts === 5 ? '+5' : pts === 0 ? '0' : '–';
+        const ptsCls = pts === 20 ? 'exact' : pts === 10 ? 'winner' : pts === 0 ? 'wrong' : 'none';
+        const ptsLabel = pts === 20 ? '+20' : pts === 10 ? '+10' : pts === 0 ? '0' : '–';
         const result = m.resultA != null ? `${m.resultA} – ${m.resultB}` : null;
         const fire = p.lastMinute ? ' 🔥' : '';
         return `<div class="pred-fm-card">
@@ -773,9 +807,10 @@ function setAdminTab(tab) {
   adminTab = tab;
   document.querySelectorAll('#view-admin .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.admin-section').forEach(s => s.style.display = s.dataset.tab === tab ? 'block' : 'none');
-  if (tab === 'users')   renderAdminUsers();
-  if (tab === 'matches') renderAdminMatches();
-  if (tab === 'recalc')  renderRecalcSection();
+  if (tab === 'users')    renderAdminUsers();
+  if (tab === 'matches')  renderAdminMatches();
+  if (tab === 'recalc')   renderRecalcSection();
+  if (tab === 'backdate') renderBackdateSection();
 }
 
 async function renderAdminUsers() {
@@ -860,7 +895,7 @@ async function saveMatchResult(matchId) {
       const p = d.data();
       const pts = calculatePoints(p.predictedA, p.predictedB, rA, rB);
       batch.update(d.ref, { pointsAwarded: pts });
-      total++; if (pts === 10) exact++; if (pts === 5) correct++;
+      total++; if (pts === 20) exact++; if (pts === 10) correct++;
       deltas[p.userId] = (deltas[p.userId] || 0) + (pts - (p.pointsAwarded ?? 0));
     });
     await batch.commit();
@@ -903,6 +938,69 @@ async function recalcMatch() {
   const m = STATE.matches.find(x => x.matchId === id);
   if (!m || m.resultA == null) { showToast('No result for this match', 'error'); return; }
   await saveMatchResult(id);
+}
+
+// ── Backdate: populate selects ─────────────────────────
+function renderBackdateSection() {
+  const userSel  = document.getElementById('backdate-user-select');
+  const matchSel = document.getElementById('backdate-match-select');
+  if (!userSel || !matchSel) return;
+
+  userSel.innerHTML = '<option value="">— Select player —</option>' +
+    STATE.users.map(u => `<option value="${u.id}">${u.nickname}</option>`).join('');
+
+  matchSel.innerHTML = '<option value="">— Select match —</option>' +
+    STATE.matches.map(m => {
+      const label = `${m.teamA} vs ${m.teamB} (${m.matchDay})${m.resultA != null ? ` — ${m.resultA}:${m.resultB}` : ''}`;
+      return `<option value="${m.matchId}">${label}</option>`;
+    }).join('');
+}
+
+async function saveBackdatePrediction() {
+  const userId  = document.getElementById('backdate-user-select').value;
+  const matchId = document.getElementById('backdate-match-select').value;
+  const pA      = parseInt(document.getElementById('backdate-score-a').value, 10);
+  const pB      = parseInt(document.getElementById('backdate-score-b').value, 10);
+  if (!userId || !matchId) { showToast('Select player and match', 'error'); return; }
+  if (isNaN(pA) || isNaN(pB)) { showToast('Enter valid scores', 'error'); return; }
+
+  const m = STATE.matches.find(x => x.matchId === matchId);
+  if (!m) { showToast('Match not found', 'error'); return; }
+
+  const predId = `${userId}_${matchId}`;
+  const pts = m.resultA != null ? calculatePoints(pA, pB, m.resultA, m.resultB) : null;
+
+  try {
+    const pred = {
+      userId, matchId, predictedA: pA, predictedB: pB,
+      updatedAt: serverTimestamp(), submittedAt: serverTimestamp(),
+      lastMinute: false, backdated: true,
+      ...(pts !== null ? { pointsAwarded: pts } : {}),
+    };
+    await setDoc(doc(STATE.db, 'predictions', predId), pred, { merge: true });
+
+    // Update user total if points were awarded
+    if (pts !== null) {
+      const existing = await getDoc(doc(STATE.db, 'predictions', predId));
+      const oldPts = existing.exists() ? (existing.data().pointsAwarded ?? 0) : 0;
+      const delta = pts - oldPts;
+      if (delta !== 0) {
+        const uSnap = await getDoc(doc(STATE.db, 'users', userId));
+        if (uSnap.exists()) {
+          await updateDoc(doc(STATE.db, 'users', userId), {
+            totalPoints: (uSnap.data().totalPoints || 0) + delta,
+          });
+        }
+      }
+      showToast(`✅ Saved — ${pts} pts awarded`, 'success');
+    } else {
+      showToast('✅ Prediction saved (match not completed yet)', 'success');
+    }
+
+    // Clear form
+    document.getElementById('backdate-score-a').value = '';
+    document.getElementById('backdate-score-b').value = '';
+  } catch (e) { showToast('Error: ' + e.message, 'error'); console.error(e); }
 }
 
 async function recalcAll() {
@@ -970,6 +1068,17 @@ async function initApp() {
 // EVENT WIRING
 // ═══════════════════════════════════════════════════════
 function wireEvents() {
+  // Admin hidden login — tap trophy 5× on login page
+  document.querySelector('.login-trophy')?.addEventListener('click', onTrophyTap);
+  document.getElementById('admin-login-btn')?.addEventListener('click', handleAdminLogin);
+  document.getElementById('admin-password-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleAdminLogin(); });
+  document.getElementById('admin-login-close')?.addEventListener('click', () => {
+    document.getElementById('admin-login-modal').style.display = 'none';
+  });
+
+  // Backdate
+  document.getElementById('backdate-save-btn')?.addEventListener('click', saveBackdatePrediction);
+
   // Login
   document.getElementById('login-btn').addEventListener('click', handleLogin);
   document.getElementById('login-pin').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
