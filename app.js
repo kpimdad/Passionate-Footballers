@@ -395,7 +395,7 @@ function renderHomeTab(tab) {
     if (tab === 'today')     return isToday(m.kickoffUTC) || m.status === 'locked';
     if (tab === 'completed') return m.status === 'completed';
     return true;
-  });
+  }).sort((a, b) => new Date(a.kickoffUTC) - new Date(b.kickoffUTC));
   const list = document.getElementById('match-list');
   if (filtered.length === 0) {
     list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚽</div><div class="empty-state-text">No matches here yet</div></div>`;
