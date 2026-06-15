@@ -1499,6 +1499,23 @@ body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
 .hidden { display: none !important; }
 
 /* ════════════════════════════════════════
+   MOBILE LEADERBOARD (≤599px)
+   ════════════════════════════════════════ */
+@media (max-width: 599px) {
+  /* Hide Golden Boot column on small screens so table fits */
+  .lb-td-boot, th.lb-th-pick:nth-child(4) { display: none; }
+  .lb-table   { min-width: 420px; }
+  .lb-th-rank   { width: 56px; }
+  .lb-th-player { width: 140px; }
+  .lb-th-pick   { width: 100px; }
+  .lb-th-num    { width: 64px; }
+  .lb-th-pts    { width: 60px; }
+  .lb-pts       { font-size: 2.4rem; }
+  .lb-rank-num  { font-size: 1.6rem; }
+  .lb-name-text { font-size: 1.1rem; }
+}
+
+/* ════════════════════════════════════════
    DESKTOP RESPONSIVE (≥600px)
    ════════════════════════════════════════ */
 @media (min-width: 600px) {
