@@ -62,15 +62,6 @@ body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
 #view-login.active { display: flex; }
 
 /* ── Login screen: full-screen layout ─────── */
-#view-login.active {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1.25rem;
-  gap: 2rem;
-}
 .login-hero {
   text-align: center;
   display: flex;
@@ -1499,20 +1490,59 @@ body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
 .hidden { display: none !important; }
 
 /* ════════════════════════════════════════
-   MOBILE LEADERBOARD (≤599px)
+   MOBILE (≤599px) — compact everything
    ════════════════════════════════════════ */
 @media (max-width: 599px) {
-  /* Hide Golden Boot column on small screens so table fits */
+
+  /* ── Topbar ── */
+  .topbar { height: 60px; }
+  .topbar-brand { font-size: 1.3rem; }
+  .date-nav-wrap { top: 60px; }
+  .view-header { top: 60px; }
+  #toast-container { bottom: calc(55px + env(safe-area-inset-bottom)); }
+
+  /* ── Bottom nav ── */
+  .bottom-nav { height: calc(80px + env(safe-area-inset-bottom)); }
+  body { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
+  .bnav-icon { font-size: 2rem; }
+  .bnav-label { font-size: 0.68rem; }
+
+  /* ── Login — scale down to fit one screen ── */
+  #view-login.active { gap: 1rem; padding: 1.25rem 1rem; }
+  .login-trophy { font-size: 3.5rem; margin-bottom: 0.6rem; }
+  .login-title { font-size: 2.5rem; margin-bottom: 0.25rem; }
+  .login-subtitle { font-size: 0.78rem; letter-spacing: 0.15em; }
+  .login-card { padding: 1.25rem; }
+  .form-group { margin-bottom: 0.9rem; }
+  .form-label { font-size: 0.72rem; margin-bottom: 0.35rem; }
+  .form-select, .form-input { font-size: 1rem; padding: 0.75rem 1rem; }
+  .btn { font-size: 1rem; padding: 0.65rem 1.25rem; }
+
+  /* ── My Predictions — hide accuracy stat ── */
+  .stats-bar { grid-template-columns: repeat(3, 1fr); }
+  .stats-bar .stat-box:last-child { display: none; }
+
+  /* ── Leaderboard — fits 390px exactly ──
+     rank(40) + player(115) + champion(85) + [boot hidden]
+     + exact(50) + result(50) + pts(50) = 390px            */
   .lb-td-boot, th.lb-th-pick:nth-child(4) { display: none; }
-  .lb-table   { min-width: 420px; }
-  .lb-th-rank   { width: 56px; }
-  .lb-th-player { width: 140px; }
-  .lb-th-pick   { width: 100px; }
-  .lb-th-num    { width: 64px; }
-  .lb-th-pts    { width: 60px; }
-  .lb-pts       { font-size: 2.4rem; }
-  .lb-rank-num  { font-size: 1.6rem; }
-  .lb-name-text { font-size: 1.1rem; }
+  .lb-table   { min-width: 0; width: 100%; }
+  .lb-th-rank   { width: 40px; }
+  .lb-th-player { width: 115px; }
+  .lb-th-pick   { width: 85px; }
+  .lb-th-num    { width: 50px; }
+  .lb-th-pts    { width: 50px; }
+  .lb-td-rank   { padding: 0.5rem 0.1rem 0.5rem 0.35rem; }
+  .lb-td-player { padding: 0.5rem 0.35rem; }
+  .lb-td-player .avatar { width: 28px !important; height: 28px !important; font-size: 0.6rem !important; }
+  .lb-player-wrap { gap: 0.35rem; }
+  .lb-td-pick   { padding: 0.5rem 0.3rem; font-size: 0.75rem; }
+  .lb-td-num    { font-size: 1.2rem; padding: 0.5rem 0.1rem; }
+  .lb-td-pts    { padding: 0.5rem 0.35rem 0.5rem 0.1rem; }
+  .lb-pts       { font-size: 2rem; }
+  .lb-rank-num  { font-size: 1.4rem; }
+  .lb-name-text { font-size: 0.85rem; }
+  .lb-rank-move { font-size: 0.55rem; }
 }
 
 /* ════════════════════════════════════════
@@ -1529,5 +1559,5 @@ body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
   .admin-section { max-width: 760px; margin: 0 auto; }
 }
 
-/* Toast above bottom nav */
-#toast-container { bottom: calc(72px + env(safe-area-inset-bottom)); }
+/* Toast above bottom nav (desktop) */
+#toast-container { bottom: calc(90px + env(safe-area-inset-bottom)); }
