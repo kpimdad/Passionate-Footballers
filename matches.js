@@ -762,3 +762,6 @@ const MATCHES = [
   }
 
 ];
+
+// Allow Node.js (GitHub Actions) to require() this file
+if (typeof module !== 'undefined') { module.exports = MATCHES; }
