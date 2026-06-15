@@ -39,7 +39,7 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.05em; }
 a { color: var(--gold); text-decoration: none; }
 
 /* ── BODY OFFSET for bottom nav ── */
-body { padding-bottom: calc(106px + env(safe-area-inset-bottom)); }
+body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
 
 /* ── VIEWS — show/hide ── */
 .view { display: none; }
@@ -305,7 +305,7 @@ body { padding-bottom: calc(106px + env(safe-area-inset-bottom)); }
   border-top: 1px solid var(--border);
   display: flex;
   align-items: stretch;
-  height: calc(96px + env(safe-area-inset-bottom));
+  height: calc(116px + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
 }
 .bnav-btn {
@@ -314,27 +314,27 @@ body { padding-bottom: calc(106px + env(safe-area-inset-bottom)); }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 7px;
   background: none;
   border: none;
   color: var(--muted);
   cursor: pointer;
   font-family: 'Inter', sans-serif;
   transition: color var(--transition);
-  padding: 0.5rem 0.25rem;
+  padding: 0.6rem 0.25rem;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 .bnav-btn:active { transform: scale(0.92); }
 .bnav-btn.active { color: var(--gold); }
 .bnav-icon {
-  font-size: 2.2rem;
+  font-size: 2.8rem;
   line-height: 1;
   transition: transform 0.15s ease;
 }
 .bnav-btn.active .bnav-icon { transform: translateY(-2px); }
 .bnav-label {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
