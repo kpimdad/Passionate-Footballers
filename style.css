@@ -24,7 +24,7 @@
 
 /* ── RESET ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 18px; -webkit-text-size-adjust: 100%; }
+html { font-size: 18px; -webkit-text-size-adjust: 100%; overflow-x: hidden; }
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background: var(--pitch);
@@ -1495,17 +1495,28 @@ body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
 @media (max-width: 599px) {
 
   /* ── Topbar ── */
-  .topbar { height: 60px; }
-  .topbar-brand { font-size: 1.3rem; }
-  .date-nav-wrap { top: 60px; }
-  .view-header { top: 60px; }
-  #toast-container { bottom: calc(55px + env(safe-area-inset-bottom)); }
+  .topbar { height: 52px; }
+  .topbar-brand { font-size: 1.15rem; }
+  .topbar-user { font-size: 0.88rem; }
+  .btn-logout { font-size: 0.78rem; padding: 0.35rem 0.7rem; }
+  .date-nav-wrap { top: 52px; }
+  .view-header { top: 52px; }
 
-  /* ── Bottom nav ── */
-  .bottom-nav { height: calc(80px + env(safe-area-inset-bottom)); }
-  body { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
-  .bnav-icon { font-size: 2rem; }
-  .bnav-label { font-size: 0.68rem; }
+  /* ── Bottom nav — slim, labels small enough to not overflow ── */
+  .bottom-nav { height: calc(56px + env(safe-area-inset-bottom)); }
+  body { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+  .bnav-btn { gap: 2px; padding: 0.3rem 0.1rem; }
+  .bnav-icon { font-size: 1.5rem; }
+  .bnav-label { font-size: 0.52rem; letter-spacing: 0; }
+  #toast-container { bottom: calc(36px + env(safe-area-inset-bottom)); }
+
+  /* ── Match cards ── */
+  .fm-flag { font-size: 2.2rem; }
+  .fm-score { font-size: 2rem; }
+  .fm-time { font-size: 1.8rem; }
+  .fm-name { font-size: 0.95rem; }
+  .fm-body { padding: 0.7rem 1rem 0.75rem; grid-template-columns: 1fr 90px 1fr; }
+  .fm-header { padding: 0.6rem 1rem 0; font-size: 0.7rem; }
 
   /* ── Login — scale down to fit one screen ── */
   #view-login.active { gap: 0.75rem; padding: 1rem; }
@@ -1518,31 +1529,67 @@ body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
   .form-select, .form-input { font-size: 0.95rem; padding: 0.65rem 0.9rem; }
   .btn { font-size: 0.95rem; padding: 0.6rem 1.25rem; }
 
-  /* ── My Predictions — hide accuracy stat ── */
+  /* ── My Predictions — hide accuracy, compact cards ── */
   .stats-bar { grid-template-columns: repeat(3, 1fr); }
   .stats-bar .stat-box:last-child { display: none; }
+  .pred-fm-flag { font-size: 2.2rem; }
+  .pred-fm-my-score { font-size: 2rem; }
+  .pred-fm-result { font-size: 1.5rem; }
+  .pred-fm-name { font-size: 0.95rem; }
+  .pred-fm-row { padding: 0.7rem 1rem 0.75rem; grid-template-columns: 1fr 100px 1fr; }
 
-  /* ── Leaderboard — fits 390px exactly ──
-     rank(40) + player(115) + champion(85) + [boot hidden]
-     + exact(50) + result(50) + pts(50) = 390px            */
+  /* ── Admin panel ── */
+  .admin-section { padding: 0.875rem; }
+  .admin-card-head { padding: 0.75rem 1rem; font-size: 0.95rem; }
+  .admin-card-body { padding: 0.875rem; }
+  .user-nickname { font-size: 0.95rem; }
+  .user-meta { font-size: 0.78rem; }
+  .view-title { font-size: 1.4rem; }
+
+  /* ── Leaderboard: sticky rank+player, rest scrolls ──────
+     Table is 480px wide on a ~390px viewport.
+     rank(44) and player(130) are position:sticky on left.
+     User sees rank+player always; scrolls right for picks/pts. */
   .lb-td-boot, th.lb-th-pick:nth-child(4) { display: none; }
-  .lb-table   { min-width: 0; width: 100%; }
-  .lb-th-rank   { width: 40px; }
-  .lb-th-player { width: 115px; }
-  .lb-th-pick   { width: 85px; }
-  .lb-th-num    { width: 50px; }
-  .lb-th-pts    { width: 50px; }
-  .lb-td-rank   { padding: 0.5rem 0.1rem 0.5rem 0.35rem; }
-  .lb-td-player { padding: 0.5rem 0.35rem; }
-  .lb-td-player .avatar { width: 28px !important; height: 28px !important; font-size: 0.6rem !important; }
-  .lb-player-wrap { gap: 0.35rem; }
-  .lb-td-pick   { padding: 0.5rem 0.3rem; font-size: 0.75rem; }
-  .lb-td-num    { font-size: 1.2rem; padding: 0.5rem 0.1rem; }
-  .lb-td-pts    { padding: 0.5rem 0.35rem 0.5rem 0.1rem; }
+  .lb-table { width: 480px; min-width: 480px; }
+  .lb-th-rank   { width: 44px; }
+  .lb-th-player { width: 130px; }
+  .lb-th-pick   { width: 100px; }
+  .lb-th-num    { width: 58px; }
+  .lb-th-pts    { width: 68px; }
+  /* Stick rank */
+  .lb-th-rank, .lb-td-rank {
+    position: sticky; left: 0; z-index: 3;
+    background: var(--pitch);
+  }
+  .lb-th-rank { background: var(--card2); }
+  /* Stick player immediately after rank */
+  .lb-th-player, .lb-td-player {
+    position: sticky; left: 44px; z-index: 3;
+    background: var(--pitch);
+  }
+  .lb-th-player { background: var(--card2); }
+  /* Preserve row highlight colours on sticky cells */
+  .lb-tr.lb-me  .lb-td-rank,
+  .lb-tr.lb-me  .lb-td-player { background: rgba(240,180,41,0.07); }
+  .lb-tr.gold   .lb-td-rank,
+  .lb-tr.gold   .lb-td-player { background: var(--pitch); }
+  .lb-tr.silver .lb-td-rank,
+  .lb-tr.silver .lb-td-player { background: var(--pitch); }
+  .lb-tr.bronze .lb-td-rank,
+  .lb-tr.bronze .lb-td-player { background: var(--pitch); }
+
+  .lb-td-rank   { padding: 0.55rem 0.1rem 0.55rem 0.35rem; }
+  .lb-td-player { padding: 0.55rem 0.4rem; }
+  .lb-td-player .avatar { width: 30px !important; height: 30px !important; font-size: 0.65rem !important; line-height: 30px !important; }
+  .lb-player-wrap { gap: 0.4rem; }
+  .lb-td-pick   { padding: 0.55rem 0.4rem; font-size: 0.8rem; }
+  .lb-td-num    { font-size: 1.3rem; padding: 0.55rem 0.2rem; }
+  .lb-td-pts    { padding: 0.55rem 0.5rem 0.55rem 0.2rem; }
   .lb-pts       { font-size: 2rem; }
-  .lb-rank-num  { font-size: 1.4rem; }
-  .lb-name-text { font-size: 0.85rem; }
-  .lb-rank-move { font-size: 0.55rem; }
+  .lb-rank-num  { font-size: 1.5rem; }
+  .lb-name-text { font-size: 0.88rem; }
+  .lb-rank-move { font-size: 0.6rem; }
 }
 
 /* ════════════════════════════════════════
