@@ -590,7 +590,7 @@ function startCountdownTimers() {
       if (!m) return;
       const lockMs = getLockMs(m);
       const t = timeUntil(lockMs);
-      if (!t) { fetchMatches().then(() => renderHomeTab(activeHomeTab)); return; }
+      if (!t) { fetchMatches().then(() => selectDate(activeDateKey)); return; }
       const urgent  = !t.includes('d') && !t.includes('h');
       const lastMin = isLastMinuteWindow(m);
       el.textContent = `${lastMin ? '🔥' : '⏳'} Locks in ${t}`;
@@ -722,7 +722,7 @@ async function savePrediction() {
       ? `🔥 Last-minute pick! ${m.teamA} ${scoreA}–${scoreB} ${m.teamB}`
       : `Saved: ${m.teamA} ${scoreA}–${scoreB} ${m.teamB}`, 'success');
     showView('view-home');
-    try { renderHomeTab(activeHomeTab); } catch (re) { console.warn('renderHomeTab after save:', re); }
+    selectDate(activeDateKey);
   } catch (e) { if (!saved) showToast('Error saving — try again', 'error'); console.error(e); }
   btn.disabled = false; btn.textContent = 'Save Prediction';
 }
@@ -1209,7 +1209,7 @@ function renderAdminMatches() {
 
   const fetchBtn = `
     <div style="margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
-      <a href="https://github.com/kpimdad/Kootharas-WC/actions/workflows/fetch-results.yml"
+      <a href="https://github.com/kpimdad/Passionate-Footballers/actions/workflows/fetch-results.yml"
          target="_blank" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:.4rem">
         🔄 Run Fetch Now
       </a>
@@ -1526,10 +1526,10 @@ function wireEvents() {
 
   // Home tabs
   document.querySelectorAll('#view-home .tab-btn').forEach(btn =>
-    btn.addEventListener('click', () => renderHomeTab(btn.dataset.tab)));
+    btn.addEventListener('click', () => selectDate(activeDateKey)));
 
   // Predict view
-  document.getElementById('predict-back-btn').addEventListener('click', () => { showView('view-home'); renderHomeTab(activeHomeTab); });
+  document.getElementById('predict-back-btn').addEventListener('click', () => { showView('view-home'); selectDate(activeDateKey); });
   document.getElementById('predict-save-btn').addEventListener('click', savePrediction);
 
   // Score display buttons — tap to select which team to edit
