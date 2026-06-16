@@ -759,6 +759,67 @@ body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
   font-size: 1.6rem;
 }
 
+/* ── Score Steppers ───────────────────────────────────── */
+.stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1.75rem 0 2rem;
+}
+.stepper-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+.stepper-flag { font-size: 2.5rem; line-height: 1; }
+.stepper-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--silver);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stepper-btn {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--gold);
+  font-size: 1.4rem;
+  width: 100%;
+  padding: 0.6rem 0;
+  cursor: pointer;
+  transition: background var(--transition), transform 0.08s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  line-height: 1;
+}
+.stepper-btn:active { background: var(--card2); transform: scale(0.93); }
+.stepper-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+.stepper-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 5rem;
+  color: var(--gold);
+  line-height: 1;
+  min-width: 2ch;
+  text-align: center;
+}
+.stepper-vs {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  color: var(--muted);
+  flex-shrink: 0;
+  margin-top: 4.5rem;
+}
+
 .predict-locked {
   background: rgba(192,57,43,0.1);
   border: 1px solid var(--red);

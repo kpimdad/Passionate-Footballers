@@ -632,13 +632,7 @@ async function openPredictView(matchId) {
   const saveBtn   = document.getElementById('predict-save-btn');
   lockedMsg.style.display = locked ? 'block' : 'none';
   saveBtn.disabled = locked;
-  document.querySelectorAll('.numpad-key').forEach(b => b.disabled = locked);
-  document.querySelectorAll('.score-display-btn').forEach(b => b.disabled = locked);
-  // Reset numpad to team A
-  setNumpadTeam('a');
-  document.getElementById('numpad-hint').textContent = locked
-    ? '🔒 Predictions are closed'
-    : `Entering score for ${m.teamA}`;
+  document.querySelectorAll('.stepper-btn').forEach(b => b.disabled = locked);
   showView('view-predict');
 }
 
@@ -1532,13 +1526,9 @@ function wireEvents() {
   document.getElementById('predict-back-btn').addEventListener('click', () => { showView('view-home'); selectDate(activeDateKey); });
   document.getElementById('predict-save-btn').addEventListener('click', savePrediction);
 
-  // Score display buttons — tap to select which team to edit
-  document.getElementById('score-display-a').addEventListener('click', () => setNumpadTeam('a'));
-  document.getElementById('score-display-b').addEventListener('click', () => setNumpadTeam('b'));
-
-  // Numpad keys
-  document.querySelectorAll('.numpad-key').forEach(btn =>
-    btn.addEventListener('click', () => numpadInput(btn.dataset.digit)));
+  // Stepper buttons
+  document.querySelectorAll('.stepper-btn').forEach(btn =>
+    btn.addEventListener('click', () => adjustScore(btn.dataset.team, parseInt(btn.dataset.delta, 10))));
 
   // Swipe between dates
   let touchStartX = 0;
