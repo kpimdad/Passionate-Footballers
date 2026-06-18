@@ -58,17 +58,47 @@ function fetchAPI(path) {
 async function main() {
   console.log(`[${new Date().toISOString()}] Starting WC result sync…`);
 
+  const now = Date.now();
+
+  // ── Step 1: Bulk-fetch already-completed match IDs from Firestore (1 query) ──
+  const completedSnap = await db.collection('matches').where('status', '==', 'completed').get();
+  const completedIds  = new Set();
+  completedSnap.forEach(d => completedIds.add(d.id));
+  console.log(`Firestore: ${completedIds.size} match(es) already completed`);
+
+  // ── Step 2: Find matches that have kicked off but aren't completed yet ────────
+  const pending = MATCHES.filter(m =>
+    new Date(m.kickoffUTC).getTime() + 2 * 60 * 60 * 1000 < now &&  // kicked off >2h ago
+    !completedIds.has(m.matchId)
+  );
+
+  if (pending.length === 0) {
+    console.log('No pending matches — skipping API call.');
+    await db.collection('config').doc('lastSync').set({
+      syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+      matchesUpdated: 0
+    });
+    console.log('Done. 0 match(es) updated.');
+    process.exit(0);
+  }
+
+  console.log(`${pending.length} pending match(es) to check:`, pending.map(m => `${m.teamA} vs ${m.teamB}`).join(', '));
+
+  // ── Step 3: Fetch only the date range covering pending matches from the API ───
+  const dates     = pending.map(m => new Date(m.kickoffUTC));
+  const dateFrom  = new Date(Math.min(...dates)).toISOString().slice(0, 10);
+  const dateTo    = new Date(Math.max(...dates) + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
   let data;
   try {
-    data = await fetchAPI('/v4/competitions/WC/matches?status=FINISHED');
+    data = await fetchAPI(`/v4/competitions/WC/matches?status=FINISHED&dateFrom=${dateFrom}&dateTo=${dateTo}`);
   } catch (e) {
-    // Try with season param if default fails
-    console.warn('First attempt failed, retrying with season=2026…', e.message);
-    data = await fetchAPI('/v4/competitions/WC/matches?status=FINISHED&season=2026');
+    console.warn('Date-range fetch failed, retrying with season=2026…', e.message);
+    data = await fetchAPI(`/v4/competitions/WC/matches?status=FINISHED&season=2026&dateFrom=${dateFrom}&dateTo=${dateTo}`);
   }
 
   const finished = (data.matches || []).filter(m => m.status === 'FINISHED');
-  console.log(`Found ${finished.length} finished match(es) from API`);
+  console.log(`Found ${finished.length} finished match(es) from API in range ${dateFrom} → ${dateTo}`);
 
   let updated = 0;
 
@@ -79,26 +109,14 @@ async function main() {
 
     // Match by kickoff time (±5 min tolerance)
     const apiTime = new Date(apiMatch.utcDate).getTime();
-    const ourMatch = MATCHES.find(
+    const ourMatch = pending.find(
       m => Math.abs(new Date(m.kickoffUTC).getTime() - apiTime) < 5 * 60 * 1000
     );
 
-    if (!ourMatch) {
-      console.log(`  ⚠ No local match for: ${apiMatch.homeTeam?.name} vs ${apiMatch.awayTeam?.name} @ ${apiMatch.utcDate}`);
-      continue;
-    }
-
-    // Check existing Firestore state
-    const matchRef = db.collection('matches').doc(ourMatch.matchId);
-    const matchDoc = await matchRef.get();
-    const current  = matchDoc.exists ? matchDoc.data() : {};
-
-    if (current.resultA === rA && current.resultB === rB && current.status === 'completed') {
-      console.log(`  — Already scored: ${ourMatch.teamA} ${rA}–${rB} ${ourMatch.teamB}`);
-      continue;
-    }
+    if (!ourMatch) continue; // not in our pending list, skip
 
     // Write result to Firestore
+    const matchRef = db.collection('matches').doc(ourMatch.matchId);
     await matchRef.set({ resultA: rA, resultB: rB, status: 'completed' }, { merge: true });
 
     // Score all predictions for this match
