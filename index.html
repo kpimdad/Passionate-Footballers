@@ -276,16 +276,12 @@
      VIEW 4 — LEADERBOARD
      ════════════════════════════════════════ -->
 <div id="view-leaderboard" class="view">
-  <div class="view-header">
-    <div>
-      <h2 class="view-title">Leaderboard</h2>
-    </div>
-    <div style="display:flex;align-items:center;gap:0.5rem">
-      <button id="share-card-btn" title="Share my rank" style="background:var(--card);border:1.5px solid var(--border);border-radius:8px;color:var(--gold);font-size:1.3rem;width:2.4rem;height:2.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">📸</button>
-      <select id="leaderboard-filter" class="filter-select">
-        <option value="overall">Overall</option>
-      </select>
-    </div>
+  <div class="view-header" style="flex-wrap:nowrap">
+    <h2 class="view-title" style="white-space:nowrap;flex-shrink:0">Leaderboard</h2>
+    <select id="leaderboard-filter" class="filter-select" style="flex:1;min-width:0;margin:0 0.5rem">
+      <option value="overall">🏅 Overall</option>
+    </select>
+    <button id="share-card-btn" title="Share leaderboard" style="flex-shrink:0;background:var(--card);border:1.5px solid var(--border);border-radius:8px;color:var(--gold);font-size:1.3rem;width:2.4rem;height:2.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">📸</button>
   </div>
 
   <div id="leaderboard-body" class="lb-list">
