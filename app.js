@@ -1697,82 +1697,156 @@ window.addEventListener('appinstalled', () => {
 // ═══════════════════════════════════════════════════════
 async function generateShareCard() {
   const session = STATE.session;
-  if (!session) return;
+  if (!session) { showToast('Not logged in', 'error'); return; }
+  showToast('Generating card…', 'info');
 
-  // Find user rank
-  const sorted = [...STATE.users].sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
-  const rank   = sorted.findIndex(u => u.id === session.userId) + 1;
-  const user   = sorted.find(u => u.id === session.userId);
-  if (!user) return;
+  try {
+    const sorted = [...STATE.users].sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
+    const myIdx  = sorted.findIndex(u => u.id === session.userId);
 
-  const suffix = rank === 1 ? 'st' : rank === 2 ? 'nd' : rank === 3 ? 'rd' : 'th';
-  const pts    = user.totalPoints || 0;
-  const total  = STATE.users.length;
+    // ── Canvas dimensions ────────────────────────────────
+    const W        = 800;
+    const PAD      = 28;
+    const ROW_H    = 56;
+    const TITLE_H  = 160;
+    const HDR_H    = 44;
+    const FOOTER_H = 44;
+    const H        = TITLE_H + HDR_H + sorted.length * ROW_H + FOOTER_H + PAD;
 
-  const W = 1080, H = 675;
-  const canvas = document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
 
-  // Load background image
-  await new Promise((res, rej) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => { ctx.drawImage(img, 0, 0, W, H); res(); };
-    img.onerror = rej;
-    img.src = '26.jpg';
-  });
+    // ── Background image (crop-fit portrait) ─────────────
+    await new Promise(res => {
+      const img = new Image();
+      img.onload = () => {
+        // crop centre of landscape image to fill portrait canvas
+        const scale  = Math.max(W / img.width, H / img.height);
+        const sw     = W / scale, sh = H / scale;
+        const sx     = (img.width  - sw) / 2;
+        const sy     = (img.height - sh) / 2;
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
+        res();
+      };
+      img.onerror = () => { ctx.fillStyle = '#0A1628'; ctx.fillRect(0,0,W,H); res(); };
+      img.src = '26.jpg';
+    });
 
-  // Dark overlay for readability
-  ctx.fillStyle = 'rgba(10,22,40,0.65)';
-  ctx.fillRect(0, 0, W, H);
+    // ── Dark overlay ─────────────────────────────────────
+    ctx.fillStyle = 'rgba(8,17,33,0.80)';
+    ctx.fillRect(0, 0, W, H);
 
-  // Gold top bar
-  ctx.fillStyle = '#F0B429';
-  ctx.fillRect(0, 0, W, 6);
+    // ── Trophy watermark ─────────────────────────────────
+    ctx.save();
+    ctx.globalAlpha = 0.07;
+    ctx.font = `${Math.round(H * 0.55)}px serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#F0B429';
+    ctx.fillText('🏆', W / 2, TITLE_H + (H - TITLE_H) / 2 + Math.round(H * 0.18));
+    ctx.restore();
 
-  // Title
-  ctx.fillStyle = '#F0B429';
-  ctx.font = 'bold 28px Inter, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('⚽ Passionate Footballers WC 2026', W / 2, 60);
+    // ── Title block ──────────────────────────────────────
+    ctx.textAlign = 'center';
+    ctx.font = `${Math.round(H * 0.045)}px serif`;
+    ctx.fillStyle = '#F0B429';
+    ctx.fillText('🏆', W / 2, 52);
 
-  // Name
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 64px Inter, sans-serif';
-  ctx.fillText(session.nickname, W / 2, 200);
+    ctx.font = `bold ${Math.round(H * 0.048)}px Arial, sans-serif`;
+    ctx.fillStyle = '#F0B429';
+    ctx.fillText('PASSIONATE FOOTBALLERS WC 2026', W / 2, 100);
 
-  // Rank — large
-  ctx.font = `bold 140px Inter, sans-serif`;
-  ctx.fillStyle = '#F0B429';
-  ctx.fillText(`${rank}${suffix}`, W / 2, 380);
+    ctx.font = `${Math.round(H * 0.025)}px Arial, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    const dateStr = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    ctx.fillText(dateStr, W / 2, 130);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.font = '28px Inter, sans-serif';
-  ctx.fillText(`out of ${total} players`, W / 2, 430);
+    // thin gold line
+    ctx.fillStyle = 'rgba(240,180,41,0.4)';
+    ctx.fillRect(PAD, 148, W - PAD * 2, 1);
 
-  // Points
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 52px Inter, sans-serif';
-  ctx.fillText(`${pts} pts`, W / 2, 530);
+    // ── Column header ────────────────────────────────────
+    const colX = { rank: PAD + 10, name: PAD + 56, exact: W - 195, correct: W - 130, pts: W - 48 };
+    const hdrY = TITLE_H + 28;
+    ctx.font = `bold 20px Arial, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.textAlign = 'right';
+    ctx.fillText('🎯',  colX.exact,   hdrY);
+    ctx.fillText('✅',  colX.correct,  hdrY);
+    ctx.fillText('POINTS', colX.pts,  hdrY);
 
-  // Footer
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.font = '20px Inter, sans-serif';
-  ctx.fillText('Passionate Footballers WC 2026 · Prediction Game', W / 2, 640);
+    // ── Rows ─────────────────────────────────────────────
+    sorted.forEach((u, i) => {
+      const rowY  = TITLE_H + HDR_H + i * ROW_H;
+      const isMe  = i === myIdx;
+      const textY = rowY + ROW_H * 0.63;
 
-  // Share or download
-  canvas.toBlob(async blob => {
-    const file = new File([blob], 'my-rank.png', { type: 'image/png' });
-    if (navigator.share && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: `I'm ${rank}${suffix} in the Prediction League!` }); return; }
-      catch (e) { /* fall through to download */ }
-    }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'my-rank.png'; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, 'image/png');
+      // Row background
+      if (isMe) {
+        ctx.fillStyle = 'rgba(180,130,10,0.55)';
+        ctx.beginPath();
+        ctx.roundRect(PAD, rowY + 3, W - PAD * 2, ROW_H - 5, 8);
+        ctx.fill();
+      } else if (i % 2 === 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.04)';
+        ctx.fillRect(0, rowY + 3, W, ROW_H - 5);
+      }
+
+      // Rank
+      ctx.textAlign = 'left';
+      ctx.font = isMe ? `bold 26px Arial` : `22px Arial`;
+      ctx.fillStyle = i < 3 ? '#F0B429' : 'rgba(255,255,255,0.5)';
+      ctx.fillText(i + 1, colX.rank, textY);
+
+      // Name
+      ctx.font = isMe ? `bold 28px Arial` : `26px Arial`;
+      ctx.fillStyle = isMe ? '#FFD966' : '#FFFFFF';
+      const label = u.nickname.toUpperCase() + (isMe ? ' ★' : '');
+      ctx.fillText(label, colX.name, textY);
+
+      // Exact
+      ctx.textAlign = 'right';
+      ctx.font = isMe ? `bold 26px Arial` : `24px Arial`;
+      ctx.fillStyle = '#F0B429';
+      ctx.fillText(u.exactScores || 0,    colX.exact,   textY);
+
+      // Correct
+      ctx.fillStyle = '#4cd085';
+      ctx.fillText(u.correctResults || 0, colX.correct, textY);
+
+      // Points
+      ctx.font = isMe ? `bold 30px Arial` : `bold 26px Arial`;
+      ctx.fillStyle = isMe ? '#FFD966' : '#FFFFFF';
+      ctx.fillText(u.totalPoints || 0,    colX.pts,     textY);
+    });
+
+    // ── Footer ───────────────────────────────────────────
+    const footerY = H - 14;
+    ctx.fillStyle = 'rgba(240,180,41,0.35)';
+    ctx.fillRect(0, H - FOOTER_H, W, 1);
+    ctx.textAlign = 'center';
+    ctx.font = '18px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillText('kpimdad.github.io/Passionate-Footballers', W / 2, footerY);
+
+    // ── Export ───────────────────────────────────────────
+    canvas.toBlob(async blob => {
+      if (!blob) { showToast('Failed to generate card', 'error'); return; }
+      const file = new File([blob], 'leaderboard.png', { type: 'image/png' });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'Passionate Footballers WC 2026 · Leaderboard' }); return; }
+        catch (e) { /* fall through */ }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'leaderboard.png'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }, 'image/png');
+
+  } catch (e) {
+    console.error('Share card error:', e);
+    showToast('Could not generate card', 'error');
+  }
 }
 
 // ═══════════════════════════════════════════════════════
