@@ -1748,32 +1748,39 @@ async function generateShareCard() {
 
     // ── Title block ──────────────────────────────────────
     ctx.textAlign = 'center';
-    ctx.font = `${Math.round(H * 0.045)}px serif`;
+    ctx.font = `48px serif`;
     ctx.fillStyle = '#F0B429';
-    ctx.fillText('🏆', W / 2, 52);
+    ctx.fillText('🏆', W / 2, 54);
 
-    ctx.font = `bold ${Math.round(H * 0.048)}px Arial, sans-serif`;
+    ctx.font = `bold 38px Arial, sans-serif`;
     ctx.fillStyle = '#F0B429';
-    ctx.fillText('PASSIONATE FOOTBALLERS WC 2026', W / 2, 100);
+    // split title to two lines if needed
+    ctx.fillText('PASSIONATE FOOTBALLERS', W / 2, 98);
+    ctx.font = `bold 34px Arial, sans-serif`;
+    ctx.fillStyle = 'rgba(240,180,41,0.85)';
+    ctx.fillText('WC 2026', W / 2, 132);
 
-    ctx.font = `${Math.round(H * 0.025)}px Arial, sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = `16px Arial, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.50)';
     const dateStr = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
-    ctx.fillText(dateStr, W / 2, 130);
+    ctx.fillText(dateStr, W / 2, 152);
 
     // thin gold line
     ctx.fillStyle = 'rgba(240,180,41,0.4)';
-    ctx.fillRect(PAD, 148, W - PAD * 2, 1);
+    ctx.fillRect(PAD, TITLE_H - 6, W - PAD * 2, 1);
 
     // ── Column header ────────────────────────────────────
-    const colX = { rank: PAD + 10, name: PAD + 56, exact: W - 195, correct: W - 130, pts: W - 48 };
+    const colX = { rank: PAD + 10, name: PAD + 56, exact: W - 190, correct: W - 120, pts: W - 44 };
     const hdrY = TITLE_H + 28;
-    ctx.font = `bold 20px Arial, sans-serif`;
+    ctx.font = `bold 18px Arial, sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.textAlign = 'left';
+    ctx.fillText('#',      colX.rank,    hdrY);
+    ctx.fillText('PLAYER', colX.name,    hdrY);
     ctx.textAlign = 'right';
-    ctx.fillText('🎯',  colX.exact,   hdrY);
-    ctx.fillText('✅',  colX.correct,  hdrY);
-    ctx.fillText('POINTS', colX.pts,  hdrY);
+    ctx.fillText('🎯',    colX.exact,   hdrY);
+    ctx.fillText('✅',    colX.correct,  hdrY);
+    ctx.fillText('PTS',   colX.pts,     hdrY);
 
     // ── Rows ─────────────────────────────────────────────
     sorted.forEach((u, i) => {
@@ -1808,11 +1815,11 @@ async function generateShareCard() {
       ctx.textAlign = 'right';
       ctx.font = isMe ? `bold 26px Arial` : `24px Arial`;
       ctx.fillStyle = '#F0B429';
-      ctx.fillText(u.exactScores || 0,    colX.exact,   textY);
+      ctx.fillText(u.computedExact || 0,    colX.exact,   textY);
 
       // Correct
       ctx.fillStyle = '#4cd085';
-      ctx.fillText(u.correctResults || 0, colX.correct, textY);
+      ctx.fillText(u.computedWinner || 0, colX.correct, textY);
 
       // Points
       ctx.font = isMe ? `bold 30px Arial` : `bold 26px Arial`;
