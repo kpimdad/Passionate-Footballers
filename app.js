@@ -1032,16 +1032,20 @@ async function initMyPredictions() {
   renderMyPredictions();
 }
 
+let myPredsTab = 'upcoming';
+
 function renderMyPredictions() {
   let totalPts = 0, exact = 0, winner = 0;
-  const groups = {};
+  const allGroups = { upcoming: {}, finished: {} };
+
   STATE.matches.forEach(m => {
     const p = STATE.predictions[m.matchId];
     if (!p) return;
-    if (!groups[m.matchDay]) groups[m.matchDay] = [];
-    groups[m.matchDay].push({ m, p });
     if (p.pointsAwarded === 13) { totalPts += 13; exact++; }
     else if (p.pointsAwarded === 10) { totalPts += 10; winner++; }
+    const bucket = m.status === 'completed' ? 'finished' : 'upcoming';
+    if (!allGroups[bucket][m.matchDay]) allGroups[bucket][m.matchDay] = [];
+    allGroups[bucket][m.matchDay].push({ m, p });
   });
 
   const scored = Object.values(STATE.predictions).filter(p => p.pointsAwarded != null);
@@ -1052,11 +1056,21 @@ function renderMyPredictions() {
   document.getElementById('stat-winner').textContent = winner;
   document.getElementById('stat-acc').textContent    = accuracy + '%';
 
+  // sync tab buttons
+  document.querySelectorAll('[data-ptab]').forEach(b =>
+    b.classList.toggle('active', b.dataset.ptab === myPredsTab));
+
+  const groups = allGroups[myPredsTab];
   const container = document.getElementById('my-preds-list');
+
   if (Object.keys(groups).length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No predictions yet — go make some!</div></div>`;
+    const msg = myPredsTab === 'upcoming'
+      ? 'No upcoming predictions — go make some!'
+      : 'No finished matches yet';
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">${msg}</div></div>`;
     return;
   }
+
   container.innerHTML = Object.entries(groups).map(([day, items]) => `
     <div class="matchday-group">
       <div class="matchday-label">${day}</div>
@@ -1196,19 +1210,36 @@ async function addAdminUser() {
   } catch (e) { showToast('Error adding user', 'error'); console.error(e); }
 }
 
+let adminMatchTab = 'upcoming';
+
 function renderAdminMatches() {
   const container = document.getElementById('admin-match-list');
-  const byDay = {};
-  STATE.matches.forEach(m => { if (!byDay[m.matchDay]) byDay[m.matchDay] = []; byDay[m.matchDay].push(m); });
 
-  const fetchBtn = `
+  // sync tab buttons
+  document.querySelectorAll('[data-amtab]').forEach(b =>
+    b.classList.toggle('active', b.dataset.amtab === adminMatchTab));
+
+  const isCompleted = adminMatchTab === 'completed';
+  const filtered = STATE.matches.filter(m =>
+    isCompleted ? m.status === 'completed' : m.status !== 'completed'
+  );
+
+  const fetchBtn = !isCompleted ? `
     <div style="margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
       <a href="https://github.com/kpimdad/Passionate-Footballers/actions/workflows/fetch-results.yml"
          target="_blank" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:.4rem">
         🔄 Run Fetch Now
       </a>
       <span style="font-size:0.78rem;color:var(--muted)">Auto-runs every hour via GitHub Actions · click to trigger manually</span>
-    </div>`;
+    </div>` : '';
+
+  if (filtered.length === 0) {
+    container.innerHTML = fetchBtn + `<div class="empty-state"><div class="empty-state-icon">${isCompleted ? '✅' : '⏳'}</div><div class="empty-state-text">No ${isCompleted ? 'completed' : 'upcoming'} matches</div></div>`;
+    return;
+  }
+
+  const byDay = {};
+  filtered.forEach(m => { if (!byDay[m.matchDay]) byDay[m.matchDay] = []; byDay[m.matchDay].push(m); });
 
   container.innerHTML = fetchBtn + Object.entries(byDay).map(([day, matches]) => `
     <div class="admin-card" style="margin-bottom:1rem">
@@ -1546,6 +1577,15 @@ function wireEvents() {
 
   // Leaderboard
   document.getElementById('leaderboard-filter').addEventListener('change', e => renderLeaderboard(e.target.value));
+  document.getElementById('share-card-btn').addEventListener('click', generateShareCard);
+
+  // My Predictions tabs
+  document.querySelectorAll('[data-ptab]').forEach(btn =>
+    btn.addEventListener('click', () => { myPredsTab = btn.dataset.ptab; renderMyPredictions(); }));
+
+  // Admin match tabs
+  document.querySelectorAll('[data-amtab]').forEach(btn =>
+    btn.addEventListener('click', () => { adminMatchTab = btn.dataset.amtab; renderAdminMatches(); }));
 
   // Admin
   document.querySelectorAll('#view-admin .tab-btn').forEach(btn =>
@@ -1651,6 +1691,89 @@ window.addEventListener('beforeinstallprompt', e => {
 window.addEventListener('appinstalled', () => {
   document.getElementById('install-banner').style.display = 'none';
 });
+
+// ═══════════════════════════════════════════════════════
+// SHARE CARD GENERATOR
+// ═══════════════════════════════════════════════════════
+async function generateShareCard() {
+  const session = STATE.session;
+  if (!session) return;
+
+  // Find user rank
+  const sorted = [...STATE.users].sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
+  const rank   = sorted.findIndex(u => u.id === session.userId) + 1;
+  const user   = sorted.find(u => u.id === session.userId);
+  if (!user) return;
+
+  const suffix = rank === 1 ? 'st' : rank === 2 ? 'nd' : rank === 3 ? 'rd' : 'th';
+  const pts    = user.totalPoints || 0;
+  const total  = STATE.users.length;
+
+  const W = 1080, H = 675;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Load background image
+  await new Promise((res, rej) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { ctx.drawImage(img, 0, 0, W, H); res(); };
+    img.onerror = rej;
+    img.src = '26.jpg';
+  });
+
+  // Dark overlay for readability
+  ctx.fillStyle = 'rgba(10,22,40,0.65)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Gold top bar
+  ctx.fillStyle = '#F0B429';
+  ctx.fillRect(0, 0, W, 6);
+
+  // Title
+  ctx.fillStyle = '#F0B429';
+  ctx.font = 'bold 28px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('⚽ Passionate Footballers WC 2026', W / 2, 60);
+
+  // Name
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 64px Inter, sans-serif';
+  ctx.fillText(session.nickname, W / 2, 200);
+
+  // Rank — large
+  ctx.font = `bold 140px Inter, sans-serif`;
+  ctx.fillStyle = '#F0B429';
+  ctx.fillText(`${rank}${suffix}`, W / 2, 380);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '28px Inter, sans-serif';
+  ctx.fillText(`out of ${total} players`, W / 2, 430);
+
+  // Points
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 52px Inter, sans-serif';
+  ctx.fillText(`${pts} pts`, W / 2, 530);
+
+  // Footer
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '20px Inter, sans-serif';
+  ctx.fillText('Passionate Footballers WC 2026 · Prediction Game', W / 2, 640);
+
+  // Share or download
+  canvas.toBlob(async blob => {
+    const file = new File([blob], 'my-rank.png', { type: 'image/png' });
+    if (navigator.share && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: `I'm ${rank}${suffix} in the Prediction League!` }); return; }
+      catch (e) { /* fall through to download */ }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'my-rank.png'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, 'image/png');
+}
 
 // ═══════════════════════════════════════════════════════
 // BOOT

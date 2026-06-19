@@ -280,9 +280,12 @@
     <div>
       <h2 class="view-title">Leaderboard</h2>
     </div>
-    <select id="leaderboard-filter" class="filter-select">
-      <option value="overall">Overall</option>
-    </select>
+    <div style="display:flex;align-items:center;gap:0.5rem">
+      <button id="share-card-btn" title="Share my rank" style="background:var(--card);border:1.5px solid var(--border);border-radius:8px;color:var(--gold);font-size:1.3rem;width:2.4rem;height:2.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">📸</button>
+      <select id="leaderboard-filter" class="filter-select">
+        <option value="overall">Overall</option>
+      </select>
+    </div>
   </div>
 
   <div id="leaderboard-body" class="lb-list">
@@ -316,6 +319,11 @@
       <div class="stat-num" id="stat-acc" style="color:var(--silver)">0%</div>
       <div class="stat-label">Accuracy</div>
     </div>
+  </div>
+
+  <div class="pred-tabs">
+    <button class="pred-tab active" data-ptab="upcoming">⏳ Upcoming</button>
+    <button class="pred-tab" data-ptab="finished">✅ Finished</button>
   </div>
 
   <div id="my-preds-list">
@@ -365,6 +373,10 @@
 
   <!-- Tab: Manage Matches -->
   <div class="admin-section" data-tab="matches" style="display:none">
+    <div class="pred-tabs" style="margin-bottom:1rem">
+      <button class="pred-tab active" data-amtab="upcoming">⏳ Upcoming</button>
+      <button class="pred-tab" data-amtab="completed">✅ Completed</button>
+    </div>
     <div id="admin-match-list">
       <div class="spinner"></div>
     </div>
