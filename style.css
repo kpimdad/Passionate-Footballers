@@ -1175,7 +1175,17 @@ body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
   font-size: 0.72rem;
   color: var(--muted);
   text-align: center;
-  padding: 0.5rem 1rem 1rem;
+  padding: 0.5rem 1rem 0.25rem;
+}
+.lb-legend {
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 0 1rem 1rem;
+  line-height: 1.6;
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
 }
 
 /* ════════════════════════════════════════

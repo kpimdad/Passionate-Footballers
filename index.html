@@ -281,13 +281,14 @@
     <select id="leaderboard-filter" class="filter-select" style="flex:1;min-width:0;margin:0 0.5rem">
       <option value="overall">🏅 Overall</option>
     </select>
-    <button id="share-card-btn" title="Share leaderboard" style="flex-shrink:0;background:var(--card);border:1.5px solid var(--border);border-radius:8px;color:var(--gold);font-size:1.3rem;width:2.4rem;height:2.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent">📸</button>
+    <button id="share-card-btn" title="Share leaderboard" style="flex-shrink:0;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--gold);font-size:1rem;padding:0.4rem 0.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;line-height:1">📸</button>
   </div>
 
   <div id="leaderboard-body" class="lb-list">
     <div class="loading-center"><div class="spinner"></div></div>
   </div>
   <div id="leaderboard-updated" class="updated-note"></div>
+  <div class="lb-legend">MF = Matches Finished &nbsp;·&nbsp; MP = Matches Played &nbsp;·&nbsp; 🎯 = Exact Score (13pts) &nbsp;·&nbsp; ✅ = Correct Result (10pts)</div>
 </div>
 
 <!-- ════════════════════════════════════════
