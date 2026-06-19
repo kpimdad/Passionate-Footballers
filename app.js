@@ -213,7 +213,12 @@ async function fetchUsers() {
   snap.forEach(d => {
     if (!d.data().disabled && !d.data().isAdminAccount) STATE.users.push({ id: d.id, ...d.data() });
   });
-  STATE.users.sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
+  STATE.users.sort((a, b) => {
+    const pts  = (b.totalPoints    || 0) - (a.totalPoints    || 0); if (pts  !== 0) return pts;
+    const ex   = (b.computedExact  || 0) - (a.computedExact  || 0); if (ex   !== 0) return ex;
+    const win  = (b.computedWinner || 0) - (a.computedWinner || 0); if (win  !== 0) return win;
+    return (a.predictionsSubmitted || 0) - (b.predictionsSubmitted || 0); // fewer played = better
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -892,7 +897,12 @@ async function buildFilteredLeaderboard(matchIds, filter) {
     ...u, filteredPoints: pts[u.id] || 0,
     filteredExact: exact[u.id] || 0, filteredWinner: winner[u.id] || 0,
     filteredPredCount: predCount[u.id] || 0,
-  })).sort((a, b) => b.filteredPoints - a.filteredPoints);
+  })).sort((a, b) => {
+    const pts = b.filteredPoints - a.filteredPoints;           if (pts !== 0) return pts;
+    const ex  = b.filteredExact  - a.filteredExact;            if (ex  !== 0) return ex;
+    const win = b.filteredWinner - a.filteredWinner;           if (win !== 0) return win;
+    return (a.filteredPredCount || 0) - (b.filteredPredCount || 0);
+  });
   renderLeaderboardTable(sorted, filter, totalCompleted);
 }
 
@@ -1701,7 +1711,12 @@ async function generateShareCard() {
   showToast('Generating card…', 'info');
 
   try {
-    const sorted = [...STATE.users].sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
+    const sorted = [...STATE.users].sort((a, b) => {
+      const pts = (b.totalPoints    || 0) - (a.totalPoints    || 0); if (pts !== 0) return pts;
+      const ex  = (b.computedExact  || 0) - (a.computedExact  || 0); if (ex  !== 0) return ex;
+      const win = (b.computedWinner || 0) - (a.computedWinner || 0); if (win !== 0) return win;
+      return (a.predictionsSubmitted || 0) - (b.predictionsSubmitted || 0);
+    });
     const myIdx  = sorted.findIndex(u => u.id === session.userId);
 
     // ── Canvas dimensions ────────────────────────────────
