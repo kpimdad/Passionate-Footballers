@@ -1267,14 +1267,14 @@ function renderAdminMatches() {
       : new Date(a.kickoffUTC) - new Date(b.kickoffUTC)  // soonest upcoming first
     );
 
-  const fetchBtn = !isCompleted ? `
+  const fetchBtn = `
     <div style="margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
       <a href="https://github.com/kpimdad/Passionate-Footballers/actions/workflows/fetch-results.yml"
          target="_blank" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:.4rem">
         🔄 Run Fetch Now
       </a>
       <span style="font-size:0.78rem;color:var(--muted)">Auto-runs every hour via GitHub Actions · click to trigger manually</span>
-    </div>` : '';
+    </div>`;
 
   if (filtered.length === 0) {
     container.innerHTML = fetchBtn + `<div class="empty-state"><div class="empty-state-icon">${isCompleted ? '✅' : '⏳'}</div><div class="empty-state-text">No ${isCompleted ? 'completed' : 'upcoming'} matches</div></div>`;
