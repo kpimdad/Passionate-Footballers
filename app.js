@@ -709,6 +709,24 @@ async function savePrediction() {
     await setDoc(doc(STATE.db, 'predictions', predId), pred, { merge: true });
     saved = true; // ← primary write succeeded; never show error toast after this point
 
+    // ── Audit trail: record previous score whenever prediction is changed ──
+    const isChange = existing &&
+      (existing.predictedA !== scoreA || existing.predictedB !== scoreB);
+    if (isChange) {
+      const auditRef = doc(STATE.db, 'predictionEdits',
+        `${STATE.session.userId}_${m.matchId}_${Date.now()}`);
+      setDoc(auditRef, {
+        userId:    STATE.session.userId,
+        matchId:   m.matchId,
+        previousA: existing.predictedA,
+        previousB: existing.predictedB,
+        newA:      scoreA,
+        newB:      scoreB,
+        changedAt: serverTimestamp(),
+        lastMinute: lastMin,
+      }).catch(e => console.warn('audit trail write failed:', e));
+    }
+
     // Track last-minute count — fire-and-forget, never blocks UI
     if (lastMin && !existing?.lastMinute) {
       const uRef = doc(STATE.db, 'users', STATE.session.userId);
