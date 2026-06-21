@@ -1068,15 +1068,18 @@ function renderMyPredictions() {
   let totalPts = 0, exact = 0, winner = 0;
   const allGroups = { upcoming: {}, finished: {} };
 
-  STATE.matches.forEach(m => {
-    const p = STATE.predictions[m.matchId];
-    if (!p) return;
-    if (p.pointsAwarded === 13) { totalPts += 13; exact++; }
-    else if (p.pointsAwarded === 10) { totalPts += 10; winner++; }
-    const bucket = m.status === 'completed' ? 'finished' : 'upcoming';
-    if (!allGroups[bucket][m.matchDay]) allGroups[bucket][m.matchDay] = [];
-    allGroups[bucket][m.matchDay].push({ m, p });
-  });
+  // Sort ascending so upcoming shows soonest first; we'll reverse finished below
+  [...STATE.matches]
+    .sort((a, b) => new Date(a.kickoffUTC) - new Date(b.kickoffUTC))
+    .forEach(m => {
+      const p = STATE.predictions[m.matchId];
+      if (!p) return;
+      if (p.pointsAwarded === 13) { totalPts += 13; exact++; }
+      else if (p.pointsAwarded === 10) { totalPts += 10; winner++; }
+      const bucket = m.status === 'completed' ? 'finished' : 'upcoming';
+      if (!allGroups[bucket][m.matchDay]) allGroups[bucket][m.matchDay] = [];
+      allGroups[bucket][m.matchDay].push({ m, p });
+    });
 
   const scored = Object.values(STATE.predictions).filter(p => p.pointsAwarded != null);
   const accuracy = scored.length > 0 ? Math.round(((exact + winner) / scored.length) * 100) : 0;
@@ -1101,7 +1104,14 @@ function renderMyPredictions() {
     return;
   }
 
-  container.innerHTML = Object.entries(groups).map(([day, items]) => `
+  // Finished: reverse so latest matchday shows first; also reverse items within each group
+  let groupEntries = Object.entries(groups);
+  if (myPredsTab === 'finished') {
+    groupEntries.reverse();
+    groupEntries.forEach(([, items]) => items.reverse());
+  }
+
+  container.innerHTML = groupEntries.map(([day, items]) => `
     <div class="matchday-group">
       <div class="matchday-label">${day}</div>
       ${items.map(({ m, p }) => {
@@ -1250,9 +1260,12 @@ function renderAdminMatches() {
     b.classList.toggle('active', b.dataset.amtab === adminMatchTab));
 
   const isCompleted = adminMatchTab === 'completed';
-  const filtered = STATE.matches.filter(m =>
-    isCompleted ? m.status === 'completed' : m.status !== 'completed'
-  );
+  const filtered = STATE.matches
+    .filter(m => isCompleted ? m.status === 'completed' : m.status !== 'completed')
+    .sort((a, b) => isCompleted
+      ? new Date(b.kickoffUTC) - new Date(a.kickoffUTC)  // latest completed first
+      : new Date(a.kickoffUTC) - new Date(b.kickoffUTC)  // soonest upcoming first
+    );
 
   const fetchBtn = !isCompleted ? `
     <div style="margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
