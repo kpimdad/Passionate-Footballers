@@ -68,7 +68,7 @@ async function main() {
 
   // ── Step 2: Find matches that have kicked off but aren't completed yet ────────
   const pending = MATCHES.filter(m =>
-    new Date(m.kickoffUTC).getTime() + 2 * 60 * 60 * 1000 < now &&  // kicked off >2h ago
+    new Date(m.kickoffUTC).getTime() + 100 * 60 * 1000 < now &&  // kicked off >100 min ago (90min match + 10min buffer)
     !completedIds.has(m.matchId)
   );
 
