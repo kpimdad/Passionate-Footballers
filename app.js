@@ -1456,7 +1456,8 @@ async function recalcAll() {
     const pSnap = await getDocs(collection(STATE.db, 'predictions'));
     pSnap.forEach(d => {
       const p = d.data();
-      if (p.pointsAwarded != null) totals[p.userId] = (totals[p.userId] || 0) + p.pointsAwarded;
+      if (p.pointsAwarded == null || !totals.hasOwnProperty(p.userId)) return; // skip orphaned predictions
+      totals[p.userId] = (totals[p.userId] || 0) + p.pointsAwarded;
     });
     const batch = writeBatch(STATE.db);
     Object.entries(totals).forEach(([uid, pts]) => batch.update(doc(STATE.db, 'users', uid), { totalPoints: pts }));
@@ -1494,7 +1495,8 @@ async function rescoreAllMatches() {
     const allPreds = await getDocs(collection(STATE.db, 'predictions'));
     allPreds.forEach(d => {
       const p = d.data();
-      if (p.pointsAwarded != null) totals[p.userId] = (totals[p.userId] || 0) + p.pointsAwarded;
+      if (p.pointsAwarded == null || !totals.hasOwnProperty(p.userId)) return; // skip orphaned
+      totals[p.userId] = (totals[p.userId] || 0) + p.pointsAwarded;
     });
     const uBatch = writeBatch(STATE.db);
     Object.entries(totals).forEach(([uid, pts]) => uBatch.update(doc(STATE.db, 'users', uid), { totalPoints: pts }));
