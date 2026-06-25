@@ -456,6 +456,20 @@
 </div>
 
 <!-- ════════════════════════════════════════
+     CONFIRM MODAL (replaces window.confirm which fails in PWA)
+     ════════════════════════════════════════ -->
+<div id="confirm-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:340px">
+    <h2 id="confirm-modal-title" class="bebas" style="color:var(--gold);font-size:1.6rem;margin-bottom:0.75rem"></h2>
+    <p id="confirm-modal-msg" style="color:var(--silver);font-size:0.875rem;margin-bottom:1.5rem;line-height:1.5"></p>
+    <div style="display:flex;gap:0.75rem">
+      <button id="confirm-modal-ok" class="btn btn-primary" style="flex:1">Confirm</button>
+      <button id="confirm-modal-cancel" class="btn btn-secondary" style="flex:1">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
      CHAMPION / GOLDEN BOOT MODAL
      ════════════════════════════════════════ -->
 <div id="champion-modal" class="modal-overlay" style="display:none">

@@ -75,6 +75,26 @@ async function hashPin(pin) {
 }
 
 // ── Toast ──────────────────────────────────────────────
+// ── Confirm dialog (replaces window.confirm which fails in PWA standalone) ──
+function showConfirm(title, msg) {
+  return new Promise(resolve => {
+    const modal = document.getElementById('confirm-modal');
+    document.getElementById('confirm-modal-title').textContent = title;
+    document.getElementById('confirm-modal-msg').textContent   = msg;
+    modal.style.display = 'flex';
+    const ok     = document.getElementById('confirm-modal-ok');
+    const cancel = document.getElementById('confirm-modal-cancel');
+    const done = (result) => {
+      modal.style.display = 'none';
+      ok.replaceWith(ok.cloneNode(true));
+      cancel.replaceWith(cancel.cloneNode(true));
+      resolve(result);
+    };
+    document.getElementById('confirm-modal-ok').addEventListener('click',     () => done(true),  { once: true });
+    document.getElementById('confirm-modal-cancel').addEventListener('click', () => done(false), { once: true });
+  });
+}
+
 function showToast(msg, type = 'info') {
   const icons = { success: '✅', error: '❌', info: 'ℹ️', lock: '🔒' };
   const t = document.createElement('div');
@@ -1427,7 +1447,7 @@ async function saveBackdatePrediction() {
 }
 
 async function recalcAll() {
-  if (!confirm('Rebuild ALL user point totals from scratch?')) return;
+  if (!await showConfirm('Rebuild Totals', 'Re-sum all stored pointsAwarded values into each user\'s total. Does not change individual prediction scores.')) return;
   showToast('Rebuilding…', 'info');
   try {
     const uSnap = await getDocs(collection(STATE.db, 'users'));
@@ -1448,7 +1468,7 @@ async function recalcAll() {
 // Re-score every prediction for every completed match, then rebuild totals.
 // Use this when the scoring formula has changed (e.g. switching to 3/10/0).
 async function rescoreAllMatches() {
-  if (!confirm('Re-score ALL predictions for ALL completed matches with current scoring (3 / 10 / 0)? This overwrites stored points.')) return;
+  if (!await showConfirm('Re-score All Matches', 'Recalculate pointsAwarded for every prediction on every completed match (13 / 10 / 0), then rebuild all totals. Use to fix any sync issues.')) return;
   showToast('Re-scoring all matches…', 'info');
   try {
     const completedMatches = STATE.matches.filter(m => m.status === 'completed' && m.resultA != null);
