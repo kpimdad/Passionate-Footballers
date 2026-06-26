@@ -1,11 +1,7 @@
 name: Fetch WC Results
 
 on:
-  schedule:
-    # Run every 15 min around the clock — script exits in <1s when nothing is pending
-    # so there's zero API/quota cost during quiet hours
-    - cron: '*/15 * * * *'
-  workflow_dispatch: # Manual trigger from Actions tab
+  workflow_dispatch: # Manual trigger only — run from GitHub Actions tab when needed
 
 jobs:
   fetch:
