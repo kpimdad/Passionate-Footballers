@@ -1,9 +1,8 @@
 /**
  * seed-r32-teams.js
- * One-time script to hardcode confirmed R32 fixture teams into Firestore.
- * Run manually: FIREBASE_SERVICE_ACCOUNT='...' node seed-r32-teams.js
- *
- * Source: Al Jazeera / NBC Sports / Olympics.com (June 28, 2026)
+ * Writes all 16 confirmed R32 fixtures to Firestore.
+ * Source: FIFA official fixtures page (June 28, 2026)
+ * Run via GitHub Actions: "Seed R32 Teams" workflow
  */
 
 'use strict';
@@ -27,62 +26,61 @@ const FLAG = {
   'France':                '🇫🇷',
   'Sweden':                '🇸🇪',
   'Mexico':                '🇲🇽',
+  'Ecuador':               '🇪🇨',
+  'England':               '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'DR Congo':              '🇨🇩',
+  'Belgium':               '🇧🇪',
+  'Senegal':               '🇸🇳',
   'USA':                   '🇺🇸',
   'Bosnia & Herzegovina':  '🇧🇦',
   'Spain':                 '🇪🇸',
+  'Austria':               '🇦🇹',
+  'Portugal':              '🇵🇹',
+  'Croatia':               '🇭🇷',
   'Switzerland':           '🇨🇭',
+  'Algeria':               '🇩🇿',
   'Australia':             '🇦🇺',
+  'Egypt':                 '🇪🇬',
   'Argentina':             '🇦🇷',
   'Cape Verde':            '🇨🇻',
+  'Colombia':              '🇨🇴',
+  'Ghana':                 '🇬🇭',
 };
 
-// Confirmed R32 fixtures (source: Al Jazeera, NBC Sports, Olympics.com - June 28 2026)
-// matchId ordering follows our matches-index.json kickoff times (m073–m088)
-const FIXTURES = {
-  m073: { teamA: 'South Africa', teamB: 'Canada'    },   // Jun 28, 19:00Z — Los Angeles ✓
-  m074: { teamA: 'Brazil',       teamB: 'Japan'      },   // Jun 29 day    — Houston
-  m075: { teamA: 'Germany',      teamB: 'Paraguay'   },   // Jun 29, 20:30Z — Boston ✓
-  m076: { teamA: 'Netherlands',  teamB: 'Morocco'    },   // Jun 29/30 night — Monterrey
-  m077: { teamA: 'Ivory Coast',  teamB: 'Norway'     },   // Jun 30, 17:00Z — Dallas ✓
-  m078: { teamA: 'France',       teamB: 'Sweden'     },   // Jun 30 evening — New York
-  m079: { teamA: 'Mexico',       teamB: 'TBD'        },   // Jul 1, 01:00Z  — Mexico City (3rd place TBD)
-  m080: { teamA: 'TBD',          teamB: 'TBD'        },   // Jul 1, 16:00Z  — Atlanta (1L vs 3rd)
-  m081: { teamA: 'TBD',          teamB: 'TBD'        },   // Jul 1, 20:00Z  — Seattle (1G vs 3rd)
-  m082: { teamA: 'USA',          teamB: 'Bosnia & Herzegovina' }, // Jul 1/2 — San Francisco
-  m083: { teamA: 'Spain',        teamB: 'TBD'        },   // Jul 2          — Los Angeles (Spain vs 2J)
-  m084: { teamA: 'TBD',          teamB: 'TBD'        },   // Jul 2, 23:00Z  — Toronto (2K vs 2L)
-  m085: { teamA: 'Switzerland',  teamB: 'TBD'        },   // Jul 2/3        — Vancouver (3rd TBD)
-  m086: { teamA: 'Australia',    teamB: 'TBD'        },   // Jul 3          — Dallas (vs 2G)
-  m087: { teamA: 'Argentina',    teamB: 'Cape Verde'  },   // Jul 3          — Miami ✓
-  m088: { teamA: 'TBD',          teamB: 'TBD'        },   // Jul 3/4        — Kansas City (1K vs 3rd)
-};
+// All 16 R32 fixtures — confirmed from FIFA.com (June 28 2026)
+// Times shown are UTC. matchIds follow matches-index.json order.
+const FIXTURES = [
+  { id: 'm073', teamA: 'South Africa',       teamB: 'Canada'              }, // Jun 28 19:00 UTC
+  { id: 'm074', teamA: 'Brazil',             teamB: 'Japan'               }, // Jun 29 17:00 UTC
+  { id: 'm075', teamA: 'Germany',            teamB: 'Paraguay'            }, // Jun 29 20:30 UTC
+  { id: 'm076', teamA: 'Netherlands',        teamB: 'Morocco'             }, // Jun 30 01:00 UTC
+  { id: 'm077', teamA: 'Ivory Coast',        teamB: 'Norway'              }, // Jun 30 17:00 UTC
+  { id: 'm078', teamA: 'France',             teamB: 'Sweden'              }, // Jun 30 21:00 UTC
+  { id: 'm079', teamA: 'Mexico',             teamB: 'Ecuador'             }, // Jul 01 01:00 UTC
+  { id: 'm080', teamA: 'England',            teamB: 'DR Congo'            }, // Jul 01 16:00 UTC
+  { id: 'm081', teamA: 'Belgium',            teamB: 'Senegal'             }, // Jul 01 20:00 UTC
+  { id: 'm082', teamA: 'USA',                teamB: 'Bosnia & Herzegovina'}, // Jul 02 00:00 UTC
+  { id: 'm083', teamA: 'Spain',              teamB: 'Austria'             }, // Jul 02 19:00 UTC
+  { id: 'm084', teamA: 'Portugal',           teamB: 'Croatia'             }, // Jul 02 23:00 UTC
+  { id: 'm085', teamA: 'Switzerland',        teamB: 'Algeria'             }, // Jul 03 03:00 UTC
+  { id: 'm086', teamA: 'Australia',          teamB: 'Egypt'               }, // Jul 03 18:00 UTC
+  { id: 'm087', teamA: 'Argentina',          teamB: 'Cape Verde'          }, // Jul 03 22:00 UTC
+  { id: 'm088', teamA: 'Colombia',           teamB: 'Ghana'               }, // Jul 04 01:30 UTC
+];
 
 async function main() {
   const batch = db.batch();
-  let count = 0;
 
-  for (const [matchId, { teamA, teamB }] of Object.entries(FIXTURES)) {
-    // Only write if at least one team is known
-    if (teamA === 'TBD' && teamB === 'TBD') {
-      console.log(`  ⏭  ${matchId}: both TBD — skipping`);
-      continue;
-    }
-
+  for (const { id, teamA, teamB } of FIXTURES) {
     const flagA = FLAG[teamA] || '🏳';
     const flagB = FLAG[teamB] || '🏳';
-
-    const ref = db.collection('matches').doc(matchId);
-    batch.set(ref, { teamA, teamB, flagA, flagB }, { merge: true });
-    console.log(`  ✅ ${matchId}: ${flagA} ${teamA} vs ${teamB} ${flagB}`);
-    count++;
+    batch.set(db.collection('matches').doc(id), { teamA, teamB, flagA, flagB }, { merge: true });
+    console.log(`  ✅ ${id}: ${flagA} ${teamA} vs ${teamB} ${flagB}`);
   }
 
   await batch.commit();
-  console.log(`\nDone. ${count} fixtures written to Firestore.`);
+  console.log(`\nDone. ${FIXTURES.length} R32 fixtures written to Firestore.`);
   process.exit(0);
 }
 
-main().catch(e => {
-  console.error('Fatal:', e.message);
-  process.exit(1);
-});
+main().catch(e => { console.error('Fatal:', e.message); process.exit(1); });
