@@ -265,6 +265,21 @@
       </div>
     </div>
 
+    <!-- Penalty picker — only visible in knockout draws -->
+    <div id="penalty-picker" style="display:none;margin:1rem 0;text-align:center">
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:.6rem">🥅 Draw predicted — who wins on penalties?</div>
+      <div style="display:flex;gap:.75rem;justify-content:center">
+        <button id="penalty-btn-a" class="btn btn-secondary penalty-pick-btn" onclick="selectPenaltyWinner('teamA')"
+          style="flex:1;max-width:140px;font-size:0.85rem;padding:.5rem .75rem">
+          <span id="penalty-flag-a"></span> <span id="penalty-name-a"></span>
+        </button>
+        <button id="penalty-btn-b" class="btn btn-secondary penalty-pick-btn" onclick="selectPenaltyWinner('teamB')"
+          style="flex:1;max-width:140px;font-size:0.85rem;padding:.5rem .75rem">
+          <span id="penalty-flag-b"></span> <span id="penalty-name-b"></span>
+        </button>
+      </div>
+    </div>
+
     <div class="predict-actions">
       <button id="predict-save-btn" class="btn btn-primary">Save Prediction 💾</button>
       <button id="predict-back-btn" class="btn btn-secondary">← Back</button>

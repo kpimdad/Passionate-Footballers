@@ -188,6 +188,7 @@ body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
   border: 1.5px solid var(--border);
 }
 .btn-secondary:hover:not(:disabled) { border-color: var(--silver); color: var(--text); }
+.penalty-pick-btn.selected { border-color: var(--gold); color: var(--gold); background: rgba(212,175,55,0.12); }
 
 .btn-danger {
   background: transparent;

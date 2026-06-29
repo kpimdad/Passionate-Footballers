@@ -23,11 +23,27 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
 
 // ── Scoring (mirror of app.js) ────────────────────────────────────────────────
+const PENALTY_BONUS = 5;
+const KNOCKOUT_STAGE_IDS = new Set(['R32', 'R16', 'QF', 'SF', '3rd', 'F']);
+
 function calculatePoints(pA, pB, rA, rB) {
   if (pA === rA && pB === rB) return 13;
   const predWin = pA > pB ? 1 : pA < pB ? -1 : 0;
   const realWin = rA > rB ? 1 : rA < rB ? -1 : 0;
   return predWin === realWin ? 10 : 0;
+}
+
+function scoreWithPenalty(p, rA, rB, penaltyWinner) {
+  let pts = calculatePoints(p.predictedA, p.predictedB, rA, rB);
+  if (
+    penaltyWinner &&
+    rA === rB &&
+    p.predictedA === p.predictedB &&
+    p.penaltyPick === penaltyWinner
+  ) {
+    pts += PENALTY_BONUS;
+  }
+  return pts;
 }
 
 // ── Fetch from football-data.org ──────────────────────────────────────────────
@@ -155,6 +171,10 @@ async function main() {
     const matchRef = db.collection('matches').doc(ourMatch.matchId);
     await matchRef.set({ resultA: rA, resultB: rB, status: 'completed' }, { merge: true });
 
+    // Get penaltyWinner if already set (admin may have set it manually)
+    const matchSnap = await matchRef.get();
+    const penaltyWinner = matchSnap.exists ? (matchSnap.data().penaltyWinner ?? null) : null;
+
     // Score all predictions for this match
     const predsSnap = await db.collection('predictions')
       .where('matchId', '==', ourMatch.matchId).get();
@@ -166,7 +186,7 @@ async function main() {
 
     predsSnap.forEach(doc => {
       const p    = doc.data();
-      const pts  = calculatePoints(p.predictedA, p.predictedB, rA, rB);
+      const pts  = scoreWithPenalty(p, rA, rB, penaltyWinner);
       const prev = p.pointsAwarded ?? 0;
 
       predBatch.update(doc.ref, { pointsAwarded: pts });
