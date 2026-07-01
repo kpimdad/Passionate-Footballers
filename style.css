@@ -1131,6 +1131,10 @@ body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
 .compare-pick.winner .compare-pts { color: #2ecc71; }
 .compare-pick.wrong  .compare-pts { color: #e74c3c; }
 .compare-pick.none   .compare-pts { color: var(--muted); }
+.cmp-penalty { font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem; }
+.cmp-penalty.won  { color: #4cd085; }
+.cmp-penalty.lost { color: var(--muted); opacity: 0.6; }
+.cmp-penalty.no-pick { opacity: 0.45; }
 
 /* ════════════════════════════════════════
    LEADERBOARD VIEW
@@ -1257,6 +1261,10 @@ body { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
 .pred-fm-pts.winner { background: rgba(52,152,219,0.12); color: #5dade2; }
 .pred-fm-pts.wrong  { background: rgba(192,57,43,0.1);   color: #e74c3c; }
 .pred-fm-pts.none   { background: transparent; color: var(--muted); }
+.pred-fm-penalty { font-size: 0.76rem; padding: 0.3rem 1.25rem; border-top: 1px solid var(--border); color: var(--muted); background: rgba(255,255,255,0.02); }
+.pred-fm-penalty.won  { color: #4cd085; background: rgba(26,107,60,0.1); }
+.pred-fm-penalty.lost { color: var(--muted); opacity: 0.6; }
+.pred-fm-penalty.no-pick { opacity: 0.4; }
 
 /* ════════════════════════════════════════
    MY PREDICTIONS VIEW

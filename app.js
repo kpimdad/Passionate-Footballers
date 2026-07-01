@@ -943,14 +943,33 @@ async function openCompareModal(userId, nickname) {
     return;
   }
 
-  const ptsCls   = p => p === 13 ? 'exact' : p === 10 ? 'winner' : p === 0 ? 'wrong' : 'none';
-  const ptsLabel = p => p === 13 ? '+13 ⚽' : p === 10 ? '+10 ✓' : p === 0 ? '0 pts' : '–';
+  const ptsCls   = p => p >= 13 ? 'exact' : p >= 10 ? 'winner' : p === 0 ? 'wrong' : 'none';
+  const ptsLabel = p => {
+    if (p === null || p === undefined) return '–';
+    if (p === 18) return '+18 🥅⚽';
+    if (p === 15) return '+15 🥅✓';
+    if (p === 13) return '+13 ⚽';
+    if (p === 10) return '+10 ✓';
+    if (p === 0)  return '0 pts';
+    return `+${p}`;
+  };
+
+  const penaltyPickLabel = (pred, m) => {
+    if (!pred || !KNOCKOUT_STAGE_IDS.has(m.stage)) return '';
+    if (pred.predictedA !== pred.predictedB) return '';
+    if (!pred.penaltyPick) return '<span class="cmp-penalty no-pick">🥅 –</span>';
+    const isTeamA = pred.penaltyPick === 'teamA';
+    const flag = getFlag(isTeamA ? m.teamA : m.teamB, isTeamA ? m.flagA : m.flagB);
+    const name = isTeamA ? m.teamA : m.teamB;
+    const won  = m.penaltyWinner && pred.penaltyPick === m.penaltyWinner;
+    return `<span class="cmp-penalty ${won ? 'won' : m.penaltyWinner ? 'lost' : ''}">${won ? '✅' : '🥅'} ${flag} ${name}</span>`;
+  };
 
   body.innerHTML = completed.map(m => {
     const mine   = STATE.predictions[m.matchId];
     const theirs = theirPreds[m.matchId];
     const myPts  = mine?.pointsAwarded ?? null;
-    const thPts  = theirs ? calculatePoints(theirs.predictedA, theirs.predictedB, m.resultA, m.resultB) : null;
+    const thPts  = theirs ? scoreWithPenalty(theirs, m.resultA, m.resultB, m) : null;
 
     return `<div class="compare-row">
       <div class="compare-match-label">${getFlag(m.teamA, m.flagA)} ${m.teamA} <strong>${m.resultA}–${m.resultB}</strong> ${m.teamB} ${getFlag(m.teamB, m.flagB)}</div>
@@ -958,11 +977,13 @@ async function openCompareModal(userId, nickname) {
         <div class="compare-pick ${ptsCls(myPts)}">
           <span class="compare-who">You</span>
           <span class="compare-score">${mine ? `${mine.predictedA}–${mine.predictedB}` : '–'}</span>
+          ${penaltyPickLabel(mine, m)}
           <span class="compare-pts">${ptsLabel(myPts)}</span>
         </div>
         <div class="compare-pick ${ptsCls(thPts)}">
           <span class="compare-who">${nickname}</span>
           <span class="compare-score">${theirs ? `${theirs.predictedA}–${theirs.predictedB}` : '–'}</span>
+          ${penaltyPickLabel(theirs, m)}
           <span class="compare-pts">${ptsLabel(thPts)}</span>
         </div>
       </div>
@@ -1194,8 +1215,10 @@ function renderMyPredictions() {
     .forEach(m => {
       const p = STATE.predictions[m.matchId];
       if (!p) return;
-      if (p.pointsAwarded === 13) { totalPts += 13; exact++; }
-      else if (p.pointsAwarded === 10) { totalPts += 10; winner++; }
+      const pts = p.pointsAwarded ?? 0;
+      if (pts >= 13) { totalPts += pts; exact++; }
+      else if (pts >= 10) { totalPts += pts; winner++; }
+      else if (pts === 0 && m.status === 'completed') { /* wrong */ }
       const bucket = m.status === 'completed' ? 'finished' : 'upcoming';
       if (!allGroups[bucket][m.matchDay]) allGroups[bucket][m.matchDay] = [];
       allGroups[bucket][m.matchDay].push({ m, p });
@@ -1235,10 +1258,25 @@ function renderMyPredictions() {
     <div class="matchday-group">
       <div class="matchday-label">${day}</div>
       ${items.map(({ m, p }) => {
-        const pts = p.pointsAwarded;
-        const ptsCls = pts === 13 ? 'exact' : pts === 10 ? 'winner' : pts === 0 ? 'wrong' : 'none';
-        const ptsLabel = pts === 13 ? '+13' : pts === 10 ? '+10' : pts === 0 ? '0' : '–';
-        const result = m.resultA != null ? `${m.resultA} – ${m.resultB}` : null;
+        const pts = p.pointsAwarded ?? null;
+        const ptsCls   = pts >= 13 ? 'exact' : pts >= 10 ? 'winner' : pts === 0 ? 'wrong' : 'none';
+        const ptsLabel = pts === 18 ? '+18' : pts === 15 ? '+15' : pts === 13 ? '+13' : pts === 10 ? '+10' : pts === 0 ? '0' : '–';
+        const result   = m.resultA != null ? `${m.resultA} – ${m.resultB}` : null;
+
+        // Penalty pick indicator for knockout draw predictions
+        let penaltyHtml = '';
+        if (KNOCKOUT_STAGE_IDS.has(m.stage) && p.predictedA === p.predictedB) {
+          if (p.penaltyPick) {
+            const isTeamA = p.penaltyPick === 'teamA';
+            const flag = getFlag(isTeamA ? m.teamA : m.teamB, isTeamA ? m.flagA : m.flagB);
+            const name = isTeamA ? m.teamA : m.teamB;
+            const won  = m.penaltyWinner && p.penaltyPick === m.penaltyWinner;
+            const lost = m.penaltyWinner && p.penaltyPick !== m.penaltyWinner;
+            penaltyHtml = `<div class="pred-fm-penalty ${won ? 'won' : lost ? 'lost' : ''}">${won ? '✅' : '🥅'} ${flag} ${name} on pens${won ? ' +5' : ''}</div>`;
+          } else {
+            penaltyHtml = `<div class="pred-fm-penalty no-pick">🥅 No penalty pick</div>`;
+          }
+        }
 
         return `<div class="pred-fm-card">
           <div class="pred-fm-row">
@@ -1258,6 +1296,7 @@ function renderMyPredictions() {
               <span class="pred-fm-name">${m.teamB}</span>
             </div>
           </div>
+          ${penaltyHtml}
           <div class="pred-fm-pts ${ptsCls}">${ptsLabel} pts</div>
         </div>`;
       }).join('')}
