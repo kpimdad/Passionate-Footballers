@@ -646,19 +646,19 @@ const MATCHES = [
 
   {
     matchId: "m089", matchDay: "Round of 16", stage: "R16", group: null,
-    teamA: "TBD", teamB: "TBD", flagA: "🏳", flagB: "🏳",
+    teamA: "Canada", teamB: "Morocco", flagA: "🇨🇦", flagB: "🇲🇦",
     kickoffUTC: "2026-07-04T17:00:00Z", venue: "NRG Stadium, Houston",
     resultA: null, resultB: null, status: "upcoming"
   },
   {
     matchId: "m090", matchDay: "Round of 16", stage: "R16", group: null,
-    teamA: "TBD", teamB: "TBD", flagA: "🏳", flagB: "🏳",
+    teamA: "Paraguay", teamB: "TBD", flagA: "🇵🇾", flagB: "🏳",
     kickoffUTC: "2026-07-04T21:00:00Z", venue: "Lincoln Financial Field, Philadelphia",
     resultA: null, resultB: null, status: "upcoming"
   },
   {
     matchId: "m091", matchDay: "Round of 16", stage: "R16", group: null,
-    teamA: "TBD", teamB: "TBD", flagA: "🏳", flagB: "🏳",
+    teamA: "Brazil", teamB: "Norway", flagA: "🇧🇷", flagB: "🇳🇴",
     kickoffUTC: "2026-07-05T20:00:00Z", venue: "MetLife Stadium, East Rutherford",
     resultA: null, resultB: null, status: "upcoming"
   },
