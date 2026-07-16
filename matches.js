@@ -744,8 +744,8 @@ const MATCHES = [
   // ═══════════════════════════════════════════════════════
 
   {
-    matchId: "m103", matchDay: "Third Place", stage: "3RD", group: null,
-    teamA: "TBD", teamB: "TBD", flagA: "🏳", flagB: "🏳",
+    matchId: "m103", matchDay: "Third Place", stage: "3rd", group: null,
+    teamA: "France", teamB: "England", flagA: "🇫🇷", flagB: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
     kickoffUTC: "2026-07-18T21:00:00Z", venue: "Hard Rock Stadium, Miami",
     resultA: null, resultB: null, status: "upcoming"
   },
@@ -755,8 +755,8 @@ const MATCHES = [
   // ═══════════════════════════════════════════════════════
 
   {
-    matchId: "m104", matchDay: "Final", stage: "FINAL", group: null,
-    teamA: "TBD", teamB: "TBD", flagA: "🏳", flagB: "🏳",
+    matchId: "m104", matchDay: "Final", stage: "F", group: null,
+    teamA: "Spain", teamB: "Argentina", flagA: "🇪🇸", flagB: "🇦🇷",
     kickoffUTC: "2026-07-19T19:00:00Z", venue: "MetLife Stadium, East Rutherford",
     resultA: null, resultB: null, status: "upcoming"
   }
