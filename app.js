@@ -1463,6 +1463,9 @@ function renderAdminMatches() {
               <button class="btn btn-secondary btn-sm" style="width:auto;font-size:0.72rem" onclick="saveMatchResult('${m.matchId}')">
                 ${hasResult ? '✏️ Override' : 'Save'}
               </button>
+              <button class="btn btn-sm ${m.status === 'locked' ? 'btn-primary' : 'btn-secondary'}" style="width:auto;font-size:0.72rem" onclick="toggleLockMatch('${m.matchId}')">
+                ${m.status === 'locked' ? '🔒 Locked' : '🔓 Lock'}
+              </button>
             </div>
             ${KNOCKOUT_STAGE_IDS.has(m.stage) ? `
             <div class="result-entry" style="margin-top:.5rem;font-size:0.78rem;align-items:center;gap:.5rem">
@@ -1526,6 +1529,18 @@ async function saveMatchResult(matchId, autoRA, autoRB, autoPenaltyWinner) {
     const m = STATE.matches.find(x => x.matchId === matchId);
     if (m) { m.resultA = rA; m.resultB = rB; m.status = 'completed'; }
   } catch (e) { showToast('Error saving result', 'error'); console.error(e); }
+}
+
+async function toggleLockMatch(matchId) {
+  const m = STATE.matches.find(x => x.matchId === matchId);
+  if (!m) return;
+  const newStatus = m.status === 'locked' ? 'upcoming' : 'locked';
+  try {
+    await setDoc(doc(STATE.db, 'matches', matchId), { status: newStatus }, { merge: true });
+    m.status = newStatus;
+    showToast(newStatus === 'locked' ? `🔒 Picks locked for ${m.teamA} vs ${m.teamB}` : `🔓 Picks unlocked for ${m.teamA} vs ${m.teamB}`, 'success');
+    renderAdminMatches();
+  } catch (e) { showToast('Error updating lock status', 'error'); console.error(e); }
 }
 
 function renderRecalcSection() {
