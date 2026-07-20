@@ -2110,7 +2110,7 @@ async function generateShareCard() {
       // Name
       ctx.font = isMe ? 'bold 22px Arial, sans-serif' : '20px Arial, sans-serif';
       ctx.fillStyle = isMe ? '#FFD966' : '#FFFFFF';
-      ctx.fillText(u.nickname.toUpperCase() + (isMe ? '  YOU' : ''), col.name, nameY);
+      ctx.fillText((u.nickname || '?').toUpperCase() + (isMe ? '  YOU' : ''), col.name, nameY);
 
       // Sub-text: champion + golden boot (plain text only)
       const champPick = u.championPick   || '-';
