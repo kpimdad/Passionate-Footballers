@@ -1747,11 +1747,8 @@ async function initApp() {
   showView('view-home');
   populateLeaderboardFilter();
 
-  // Load game config (picksLocked)
-  try {
-    const gameSnap = await getDoc(doc(STATE.db, 'config', 'game'));
-    if (gameSnap.exists()) STATE.picksLocked = gameSnap.data().picksLocked || false;
-  } catch {}
+  // Tournament is over — champion/golden boot picks are permanently locked
+  STATE.picksLocked = true;
 
   // Show champion/golden boot picker if not set yet (skip auto-open if locked)
   if (!STATE.picksLocked) {
