@@ -2006,6 +2006,7 @@ async function generateShareCard() {
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
+    if (!ctx) { showToast('Canvas unavailable on this device', 'error'); return; }
 
     // ── roundRect polyfill (Safari < 15.4 doesn't have it) ─
     function fillRoundRect(x, y, w, h, r) {
@@ -2023,27 +2024,12 @@ async function generateShareCard() {
       ctx.fill();
     }
 
-    // ── Background ────────────────────────────────────────
-    await new Promise(res => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const scale = Math.max(W / img.width, H / img.height);
-        const sw = W / scale, sh = H / scale;
-        const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
-        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
-        res();
-      };
-      img.onerror = () => {
-        const grad = ctx.createLinearGradient(0, 0, 0, H);
-        grad.addColorStop(0, '#0A1628'); grad.addColorStop(1, '#0d1f3a');
-        ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H); res();
-      };
-      img.src = '26.jpg';
-    });
-
-    // ── Dark overlay ──────────────────────────────────────
-    ctx.fillStyle = 'rgba(8,17,33,0.82)';
+    // ── Background gradient (no external image = no CORS risk) ──
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#0d1b35');
+    grad.addColorStop(0.5, '#091525');
+    grad.addColorStop(1, '#0a1020');
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
     // ── Trophy watermark ──────────────────────────────────
