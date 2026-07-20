@@ -1992,14 +1992,14 @@ async function generateShareCard() {
       const win = (b.computedWinner || 0) - (a.computedWinner || 0); if (win !== 0) return win;
       return (a.predictionsSubmitted || 0) - (b.predictionsSubmitted || 0);
     });
-    const myIdx  = sorted.findIndex(u => u.id === session.userId);
+    const myIdx = sorted.findIndex(u => u.id === session.userId);
 
-    // ── Canvas dimensions ────────────────────────────────
-    const W        = 800;
-    const PAD      = 28;
-    const ROW_H    = 56;
-    const TITLE_H  = 160;
-    const HDR_H    = 44;
+    // ── Canvas dimensions ─────────────────────────────────
+    const W        = 960;
+    const PAD      = 24;
+    const ROW_H    = 58;   // taller rows — two text lines each
+    const TITLE_H  = 150;
+    const HDR_H    = 40;
     const FOOTER_H = 44;
     const H        = TITLE_H + HDR_H + sorted.length * ROW_H + FOOTER_H + PAD;
 
@@ -2007,83 +2007,114 @@ async function generateShareCard() {
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
 
-    // ── Background image (crop-fit portrait) ─────────────
+    // ── roundRect polyfill (Safari < 15.4 doesn't have it) ─
+    function fillRoundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.arcTo(x + w, y,     x + w, y + r,     r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+      ctx.lineTo(x + r, y + h);
+      ctx.arcTo(x,     y + h, x,     y + h - r, r);
+      ctx.lineTo(x,     y + r);
+      ctx.arcTo(x,     y,     x + r, y,         r);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // ── Background ────────────────────────────────────────
     await new Promise(res => {
       const img = new Image();
+      img.crossOrigin = 'anonymous';
       img.onload = () => {
-        // crop centre of landscape image to fill portrait canvas
-        const scale  = Math.max(W / img.width, H / img.height);
-        const sw     = W / scale, sh = H / scale;
-        const sx     = (img.width  - sw) / 2;
-        const sy     = (img.height - sh) / 2;
+        const scale = Math.max(W / img.width, H / img.height);
+        const sw = W / scale, sh = H / scale;
+        const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
         ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
         res();
       };
-      img.onerror = () => { ctx.fillStyle = '#0A1628'; ctx.fillRect(0,0,W,H); res(); };
+      img.onerror = () => {
+        const grad = ctx.createLinearGradient(0, 0, 0, H);
+        grad.addColorStop(0, '#0A1628'); grad.addColorStop(1, '#0d1f3a');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H); res();
+      };
       img.src = '26.jpg';
     });
 
-    // ── Dark overlay ─────────────────────────────────────
-    ctx.fillStyle = 'rgba(8,17,33,0.80)';
+    // ── Dark overlay ──────────────────────────────────────
+    ctx.fillStyle = 'rgba(8,17,33,0.82)';
     ctx.fillRect(0, 0, W, H);
 
-    // ── Trophy watermark ─────────────────────────────────
+    // ── Trophy watermark ──────────────────────────────────
     ctx.save();
-    ctx.globalAlpha = 0.07;
-    ctx.font = `${Math.round(H * 0.55)}px serif`;
+    ctx.globalAlpha = 0.06;
+    ctx.font = `${Math.round(H * 0.5)}px serif`;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#F0B429';
-    ctx.fillText('🏆', W / 2, TITLE_H + (H - TITLE_H) / 2 + Math.round(H * 0.18));
+    ctx.fillText('🏆', W / 2, TITLE_H + (H - TITLE_H) / 2 + Math.round(H * 0.14));
     ctx.restore();
 
-    // ── Title block ──────────────────────────────────────
+    // ── Title ─────────────────────────────────────────────
     ctx.textAlign = 'center';
-    ctx.font = `48px serif`;
+    ctx.font = '44px serif';
     ctx.fillStyle = '#F0B429';
-    ctx.fillText('🏆', W / 2, 54);
-
-    ctx.font = `bold 38px Arial, sans-serif`;
+    ctx.fillText('🏆', W / 2, 50);
+    ctx.font = 'bold 36px Arial, sans-serif';
     ctx.fillStyle = '#F0B429';
-    // split title to two lines if needed
-    ctx.fillText('PASSIONATE FOOTBALLERS', W / 2, 98);
-    ctx.font = `bold 34px Arial, sans-serif`;
+    ctx.fillText('PASSIONATE FOOTBALLERS', W / 2, 90);
+    ctx.font = 'bold 28px Arial, sans-serif';
     ctx.fillStyle = 'rgba(240,180,41,0.85)';
-    ctx.fillText('WC 2026', W / 2, 132);
+    ctx.fillText('WC 2026', W / 2, 120);
+    ctx.font = '15px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.48)';
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    ctx.fillText(dateStr, W / 2, 142);
 
-    ctx.font = `16px Arial, sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,0.50)';
-    const dateStr = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
-    ctx.fillText(dateStr, W / 2, 152);
+    ctx.fillStyle = 'rgba(240,180,41,0.35)';
+    ctx.fillRect(PAD, TITLE_H - 4, W - PAD * 2, 1);
 
-    // thin gold line
-    ctx.fillStyle = 'rgba(240,180,41,0.4)';
-    ctx.fillRect(PAD, TITLE_H - 6, W - PAD * 2, 1);
+    // ── Column positions ──────────────────────────────────
+    // #  |  Name + picks sub-row  |  MF  MP  🎯  ✅  PTS
+    const col = {
+      rank:   PAD + 6,
+      name:   PAD + 46,
+      mf:     W - 388,
+      mp:     W - 308,
+      exact:  W - 222,
+      winner: W - 140,
+      pts:    W - PAD - 2,
+    };
 
-    // ── Column header ────────────────────────────────────
-    const colX = { rank: PAD + 10, name: PAD + 56, exact: W - 190, correct: W - 120, pts: W - 44 };
-    const hdrY = TITLE_H + 28;
-    ctx.font = `bold 18px Arial, sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    // ── Column headers ────────────────────────────────────
+    const hdrY = TITLE_H + 27;
+    ctx.font = 'bold 15px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.42)';
     ctx.textAlign = 'left';
-    ctx.fillText('#',      colX.rank,    hdrY);
-    ctx.fillText('PLAYER', colX.name,    hdrY);
+    ctx.fillText('#',      col.rank, hdrY);
+    ctx.fillText('PLAYER', col.name, hdrY);
     ctx.textAlign = 'right';
-    ctx.fillText('🎯',    colX.exact,   hdrY);
-    ctx.fillText('✅',    colX.correct,  hdrY);
-    ctx.fillText('PTS',   colX.pts,     hdrY);
+    ctx.fillText('MF',   col.mf,     hdrY);
+    ctx.fillText('MP',   col.mp,     hdrY);
+    ctx.fillText('🎯',   col.exact,  hdrY);
+    ctx.fillText('✅',   col.winner, hdrY);
+    ctx.fillText('PTS',  col.pts,    hdrY);
 
-    // ── Rows ─────────────────────────────────────────────
+    // ── Rows ──────────────────────────────────────────────
+    const totalCompleted = STATE.matches.filter(m => m.status === 'completed').length;
+    const CHAMP_ANSWER   = 'Spain';
+    const BOOT_ANSWERS   = new Set(['France', 'England']);
+
     sorted.forEach((u, i) => {
       const rowY  = TITLE_H + HDR_H + i * ROW_H;
       const isMe  = i === myIdx;
-      const textY = rowY + ROW_H * 0.63;
+      const nameY = rowY + ROW_H * 0.44;   // main name line
+      const subY  = rowY + ROW_H * 0.80;   // sub-text line (champion / golden boot)
 
       // Row background
       if (isMe) {
-        ctx.fillStyle = 'rgba(180,130,10,0.55)';
-        ctx.beginPath();
-        ctx.roundRect(PAD, rowY + 3, W - PAD * 2, ROW_H - 5, 8);
-        ctx.fill();
+        ctx.fillStyle = 'rgba(180,130,10,0.52)';
+        fillRoundRect(PAD, rowY + 3, W - PAD * 2, ROW_H - 5, 8);
       } else if (i % 2 === 0) {
         ctx.fillStyle = 'rgba(255,255,255,0.04)';
         ctx.fillRect(0, rowY + 3, W, ROW_H - 5);
@@ -2091,48 +2122,62 @@ async function generateShareCard() {
 
       // Rank
       ctx.textAlign = 'left';
-      ctx.font = isMe ? `bold 26px Arial` : `22px Arial`;
+      ctx.font = isMe ? 'bold 22px Arial' : '20px Arial';
       ctx.fillStyle = i < 3 ? '#F0B429' : 'rgba(255,255,255,0.5)';
-      ctx.fillText(i + 1, colX.rank, textY);
+      const rankLabel = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : String(i + 1);
+      ctx.fillText(rankLabel, col.rank, nameY);
 
       // Name
-      ctx.font = isMe ? `bold 28px Arial` : `26px Arial`;
+      ctx.font = isMe ? 'bold 23px Arial' : '21px Arial';
       ctx.fillStyle = isMe ? '#FFD966' : '#FFFFFF';
-      const label = u.nickname.toUpperCase() + (isMe ? ' ★' : '');
-      ctx.fillText(label, colX.name, textY);
+      ctx.fillText(u.nickname.toUpperCase() + (isMe ? ' ★' : ''), col.name, nameY);
 
-      // Exact
+      // Sub-text: champion pick + golden boot pick
+      const champPick = u.championPick   || '–';
+      const bootPick  = u.goldenBootPick || '–';
+      const champOk   = champPick === CHAMP_ANSWER;
+      const bootOk    = BOOT_ANSWERS.has(bootPick);
+      ctx.font = '12px Arial, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.36)';
+      ctx.fillText(
+        `🏆 ${champPick}${champOk ? ' ✅' : ''}    ⚽ ${bootPick}${bootOk ? ' ✅' : ''}`,
+        col.name + 1, subY
+      );
+
+      // Stats (right-aligned)
       ctx.textAlign = 'right';
-      ctx.font = isMe ? `bold 26px Arial` : `24px Arial`;
+      ctx.font = isMe ? 'bold 21px Arial' : '19px Arial';
+
+      ctx.fillStyle = 'rgba(255,255,255,0.42)';
+      ctx.fillText(totalCompleted,              col.mf,     nameY);
+      ctx.fillText(u.predictionsSubmitted || 0, col.mp,     nameY);
+
       ctx.fillStyle = '#F0B429';
-      ctx.fillText(u.computedExact || 0,    colX.exact,   textY);
+      ctx.fillText(u.computedExact  || 0, col.exact,  nameY);
 
-      // Correct
       ctx.fillStyle = '#4cd085';
-      ctx.fillText(u.computedWinner || 0, colX.correct, textY);
+      ctx.fillText(u.computedWinner || 0, col.winner, nameY);
 
-      // Points
-      ctx.font = isMe ? `bold 30px Arial` : `bold 26px Arial`;
+      ctx.font = isMe ? 'bold 26px Arial' : 'bold 22px Arial';
       ctx.fillStyle = isMe ? '#FFD966' : '#FFFFFF';
-      ctx.fillText(u.totalPoints || 0,    colX.pts,     textY);
+      ctx.fillText(u.totalPoints || 0, col.pts, nameY);
     });
 
-    // ── Footer ───────────────────────────────────────────
-    const footerY = H - 14;
-    ctx.fillStyle = 'rgba(240,180,41,0.35)';
+    // ── Footer ────────────────────────────────────────────
+    ctx.fillStyle = 'rgba(240,180,41,0.3)';
     ctx.fillRect(0, H - FOOTER_H, W, 1);
     ctx.textAlign = 'center';
-    ctx.font = '18px Arial, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.fillText('kpimdad.github.io/Passionate-Footballers', W / 2, footerY);
+    ctx.font = '15px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.32)';
+    ctx.fillText('kpimdad.github.io/Passionate-Footballers', W / 2, H - 14);
 
-    // ── Export ───────────────────────────────────────────
+    // ── Export ────────────────────────────────────────────
     canvas.toBlob(async blob => {
       if (!blob) { showToast('Failed to generate card', 'error'); return; }
       const file = new File([blob], 'leaderboard.png', { type: 'image/png' });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         try { await navigator.share({ files: [file], title: 'Passionate Footballers WC 2026 · Leaderboard' }); return; }
-        catch (e) { /* fall through */ }
+        catch { /* fall through to download */ }
       }
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -2142,7 +2187,7 @@ async function generateShareCard() {
 
   } catch (e) {
     console.error('Share card error:', e);
-    showToast('Could not generate card', 'error');
+    showToast('Could not generate card: ' + (e.message || e), 'error');
   }
 }
 
