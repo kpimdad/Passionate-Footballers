@@ -60,6 +60,7 @@ const STATE = {
   countdownTimers: [],
   currentPredictMatch: null,
   currentPenaltyPick: null,
+  picksLocked: false,
 };
 
 // ── Rank movement helpers ──────────────────────────────
@@ -450,8 +451,43 @@ async function openChampionModal(userData = null) {
   if (userData?.championPick)   document.getElementById('champion-select').value    = userData.championPick;
   if (userData?.goldenBootPick) document.getElementById('golden-boot-select').value = userData.goldenBootPick;
 
+  const CHAMPION_ANSWER     = 'Spain';
+  const GOLDEN_BOOT_ANSWERS = new Set(['France', 'England']);
+
+  const locked = STATE.picksLocked;
+
+  // Selects + save button
+  document.getElementById('champion-select').disabled    = locked;
+  document.getElementById('golden-boot-select').disabled = locked;
+  const saveBtn = document.getElementById('save-champion-btn');
+  saveBtn.disabled    = locked;
+  saveBtn.textContent = locked ? '🔒 Picks Locked' : 'Save My Picks';
+
+  // Result badges
+  const champPick = userData?.championPick || '';
+  const bootPick  = userData?.goldenBootPick || '';
+  const champWon  = locked && champPick === CHAMPION_ANSWER;
+  const bootWon   = locked && GOLDEN_BOOT_ANSWERS.has(bootPick);
+
+  document.getElementById('champion-pick-result').innerHTML = locked
+    ? (champWon
+        ? `<span style="color:#4cd085">✅ Correct! +50 pts — Spain 🏆 are World Champions</span>`
+        : `<span style="color:var(--muted)">❌ Spain won the tournament</span>`)
+    : '';
+
+  document.getElementById('golden-boot-pick-result').innerHTML = locked
+    ? (bootWon
+        ? `<span style="color:#4cd085">✅ Correct! +25 pts — Mbappe (France) 🥇 won the Golden Boot</span>`
+        : `<span style="color:var(--muted)">❌ Mbappe (France) won the Golden Boot</span>`)
+    : '';
+
+  // Description text
+  document.getElementById('champion-modal-desc').textContent = locked
+    ? 'Tournament over! Bonus points have been awarded.'
+    : 'Pick your champion (+50 pts) and the team the Golden Boot winner plays for (+25 pts) — awarded at the end of the tournament!';
+
   const hasPicks = userData?.championPick && userData?.goldenBootPick;
-  document.getElementById('skip-champion-btn').textContent = hasPicks ? 'Close' : 'Skip for now';
+  document.getElementById('skip-champion-btn').textContent = (hasPicks || locked) ? 'Close' : 'Skip for now';
 
   document.getElementById('champion-modal').style.display = 'flex';
 }
@@ -1711,16 +1747,24 @@ async function initApp() {
   showView('view-home');
   populateLeaderboardFilter();
 
-  // Show champion/golden boot picker if not set yet
+  // Load game config (picksLocked)
   try {
-    const uSnap = await getDoc(doc(STATE.db, 'users', session.userId));
-    if (uSnap.exists()) {
-      const data = uSnap.data();
-      if (!data.championPick || !data.goldenBootPick) {
-        setTimeout(() => openChampionModal(data), 900);
-      }
-    }
+    const gameSnap = await getDoc(doc(STATE.db, 'config', 'game'));
+    if (gameSnap.exists()) STATE.picksLocked = gameSnap.data().picksLocked || false;
   } catch {}
+
+  // Show champion/golden boot picker if not set yet (skip auto-open if locked)
+  if (!STATE.picksLocked) {
+    try {
+      const uSnap = await getDoc(doc(STATE.db, 'users', session.userId));
+      if (uSnap.exists()) {
+        const data = uSnap.data();
+        if (!data.championPick || !data.goldenBootPick) {
+          setTimeout(() => openChampionModal(data), 900);
+        }
+      }
+    } catch {}
+  }
 }
 
 // ═══════════════════════════════════════════════════════
