@@ -2032,74 +2032,69 @@ async function generateShareCard() {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    // ── Trophy watermark ──────────────────────────────────
-    ctx.save();
-    ctx.globalAlpha = 0.06;
-    ctx.font = `${Math.round(H * 0.5)}px serif`;
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#F0B429';
-    ctx.fillText('🏆', W / 2, TITLE_H + (H - TITLE_H) / 2 + Math.round(H * 0.14));
-    ctx.restore();
+    // ── Gold accent bar ───────────────────────────────────
+    ctx.fillStyle = '#D4AF37';
+    ctx.fillRect(0, 0, W, 5);
 
-    // ── Title ─────────────────────────────────────────────
+    // ── Title (no emoji — pure text only) ─────────────────
     ctx.textAlign = 'center';
-    ctx.font = '44px serif';
-    ctx.fillStyle = '#F0B429';
-    ctx.fillText('🏆', W / 2, 50);
-    ctx.font = 'bold 36px Arial, sans-serif';
-    ctx.fillStyle = '#F0B429';
-    ctx.fillText('PASSIONATE FOOTBALLERS', W / 2, 90);
-    ctx.font = 'bold 28px Arial, sans-serif';
-    ctx.fillStyle = 'rgba(240,180,41,0.85)';
-    ctx.fillText('WC 2026', W / 2, 120);
-    ctx.font = '15px Arial, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.48)';
+    ctx.font = 'bold 38px Arial, sans-serif';
+    ctx.fillStyle = '#D4AF37';
+    ctx.fillText('PASSIONATE FOOTBALLERS', W / 2, 58);
+
+    ctx.font = 'bold 24px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(212,175,55,0.80)';
+    ctx.fillText('WC 2026  |  FINAL STANDINGS', W / 2, 92);
+
+    ctx.font = '14px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.42)';
     const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    ctx.fillText(dateStr, W / 2, 142);
+    ctx.fillText('Spain 1-0 Argentina  |  ' + dateStr, W / 2, 118);
 
-    ctx.fillStyle = 'rgba(240,180,41,0.35)';
+    // thin gold divider
+    ctx.fillStyle = 'rgba(212,175,55,0.28)';
     ctx.fillRect(PAD, TITLE_H - 4, W - PAD * 2, 1);
 
     // ── Column positions ──────────────────────────────────
-    // #  |  Name + picks sub-row  |  MF  MP  🎯  ✅  PTS
     const col = {
       rank:   PAD + 6,
-      name:   PAD + 46,
+      name:   PAD + 50,
       mf:     W - 388,
       mp:     W - 308,
-      exact:  W - 222,
-      winner: W - 140,
+      exact:  W - 218,
+      winner: W - 136,
       pts:    W - PAD - 2,
     };
 
-    // ── Column headers ────────────────────────────────────
+    // ── Column headers (no emoji) ─────────────────────────
     const hdrY = TITLE_H + 27;
-    ctx.font = 'bold 15px Arial, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.42)';
+    ctx.font = 'bold 13px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.38)';
     ctx.textAlign = 'left';
     ctx.fillText('#',      col.rank, hdrY);
     ctx.fillText('PLAYER', col.name, hdrY);
     ctx.textAlign = 'right';
-    ctx.fillText('MF',   col.mf,     hdrY);
-    ctx.fillText('MP',   col.mp,     hdrY);
-    ctx.fillText('🎯',   col.exact,  hdrY);
-    ctx.fillText('✅',   col.winner, hdrY);
-    ctx.fillText('PTS',  col.pts,    hdrY);
+    ctx.fillText('MF',    col.mf,     hdrY);
+    ctx.fillText('MP',    col.mp,     hdrY);
+    ctx.fillText('EXACT', col.exact,  hdrY);
+    ctx.fillText('WIN',   col.winner, hdrY);
+    ctx.fillText('PTS',   col.pts,    hdrY);
 
-    // ── Rows ──────────────────────────────────────────────
+    // ── Rows (no emoji anywhere) ──────────────────────────
     const totalCompleted = STATE.matches.filter(m => m.status === 'completed').length;
     const CHAMP_ANSWER   = 'Spain';
     const BOOT_ANSWERS   = new Set(['France', 'England']);
+    const RANK_SUFFIX    = ['1ST', '2ND', '3RD'];
 
     sorted.forEach((u, i) => {
       const rowY  = TITLE_H + HDR_H + i * ROW_H;
       const isMe  = i === myIdx;
-      const nameY = rowY + ROW_H * 0.44;   // main name line
-      const subY  = rowY + ROW_H * 0.80;   // sub-text line (champion / golden boot)
+      const nameY = rowY + ROW_H * 0.44;
+      const subY  = rowY + ROW_H * 0.80;
 
       // Row background
       if (isMe) {
-        ctx.fillStyle = 'rgba(180,130,10,0.52)';
+        ctx.fillStyle = 'rgba(180,130,10,0.45)';
         fillRoundRect(PAD, rowY + 3, W - PAD * 2, ROW_H - 5, 8);
       } else if (i % 2 === 0) {
         ctx.fillStyle = 'rgba(255,255,255,0.04)';
@@ -2108,43 +2103,43 @@ async function generateShareCard() {
 
       // Rank
       ctx.textAlign = 'left';
-      ctx.font = isMe ? 'bold 22px Arial' : '20px Arial';
-      ctx.fillStyle = i < 3 ? '#F0B429' : 'rgba(255,255,255,0.5)';
-      const rankLabel = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : String(i + 1);
-      ctx.fillText(rankLabel, col.rank, nameY);
+      ctx.font = isMe ? 'bold 17px Arial, sans-serif' : '15px Arial, sans-serif';
+      ctx.fillStyle = i < 3 ? '#D4AF37' : 'rgba(255,255,255,0.42)';
+      ctx.fillText(i < 3 ? RANK_SUFFIX[i] : String(i + 1), col.rank, nameY);
 
       // Name
-      ctx.font = isMe ? 'bold 23px Arial' : '21px Arial';
+      ctx.font = isMe ? 'bold 22px Arial, sans-serif' : '20px Arial, sans-serif';
       ctx.fillStyle = isMe ? '#FFD966' : '#FFFFFF';
-      ctx.fillText(u.nickname.toUpperCase() + (isMe ? ' ★' : ''), col.name, nameY);
+      ctx.fillText(u.nickname.toUpperCase() + (isMe ? '  YOU' : ''), col.name, nameY);
 
-      // Sub-text: champion pick + golden boot pick
-      const champPick = u.championPick   || '–';
-      const bootPick  = u.goldenBootPick || '–';
+      // Sub-text: champion + golden boot (plain text only)
+      const champPick = u.championPick   || '-';
+      const bootPick  = u.goldenBootPick || '-';
       const champOk   = champPick === CHAMP_ANSWER;
       const bootOk    = BOOT_ANSWERS.has(bootPick);
       ctx.font = '12px Arial, sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.36)';
+      ctx.fillStyle = 'rgba(255,255,255,0.30)';
       ctx.fillText(
-        `🏆 ${champPick}${champOk ? ' ✅' : ''}    ⚽ ${bootPick}${bootOk ? ' ✅' : ''}`,
+        'CHAMP: ' + champPick + (champOk ? ' +50' : '') +
+        '   BOOT: ' + bootPick + (bootOk ? ' +25' : ''),
         col.name + 1, subY
       );
 
-      // Stats (right-aligned)
+      // Stats
       ctx.textAlign = 'right';
-      ctx.font = isMe ? 'bold 21px Arial' : '19px Arial';
+      ctx.font = isMe ? 'bold 20px Arial, sans-serif' : '18px Arial, sans-serif';
 
-      ctx.fillStyle = 'rgba(255,255,255,0.42)';
+      ctx.fillStyle = 'rgba(255,255,255,0.38)';
       ctx.fillText(totalCompleted,              col.mf,     nameY);
       ctx.fillText(u.predictionsSubmitted || 0, col.mp,     nameY);
 
-      ctx.fillStyle = '#F0B429';
+      ctx.fillStyle = '#D4AF37';
       ctx.fillText(u.computedExact  || 0, col.exact,  nameY);
 
       ctx.fillStyle = '#4cd085';
       ctx.fillText(u.computedWinner || 0, col.winner, nameY);
 
-      ctx.font = isMe ? 'bold 26px Arial' : 'bold 22px Arial';
+      ctx.font = isMe ? 'bold 24px Arial, sans-serif' : 'bold 21px Arial, sans-serif';
       ctx.fillStyle = isMe ? '#FFD966' : '#FFFFFF';
       ctx.fillText(u.totalPoints || 0, col.pts, nameY);
     });
